@@ -48,7 +48,14 @@ class DocReaderModel(object):
             self.target_idx_start += 3
 
         # Building network.
+        if opt['net'] == 'rnn_reader':
+            from .rnn_reader import RnnDocReader
+        elif opt['net'] == 'rnet_qp':
+            from .rnet_qp import RnnDocReader
+        elif opt['net'] == 'rnet':
+            from .rnet import RnnDocReader
         self.network = RnnDocReader(opt)
+        
         if state_dict:
             new_state = set(self.network.state_dict().keys())
             for k in list(state_dict['network'].keys()):
@@ -131,7 +138,7 @@ class DocReaderModel(object):
         score_list = self.network(*inputs)
 
         if len(score_list) == 3:
-            score_s = score_list[0]
+            score_s = score_list[0] 
             score_e = score_list[1]
             score_sent = score_list[2]
         elif len(score_list) == 2:

@@ -44,6 +44,7 @@ def add_cmdline_args(parser):
     parser.add_argument('--coeff_ans_predict', type=float, default = 0.1)
 
     # Model details
+    parser.add_argument('--net', type=str, default='rnet_qp')
     parser.add_argument('--fix_embeddings', type='bool', default=True)
     parser.add_argument('--tune_partial', type=int, default=0,
                         help='Train the K most frequent word embeddings')
@@ -65,6 +66,20 @@ def add_cmdline_args(parser):
     parser.add_argument('--rnn_type', type=str, default='lstm',
                         help='RNN type: lstm (default), gru, or rnn')
 
+    parser.add_argument('--qp_bottleneck', type='bool', default=False,
+                        help='---')
+    parser.add_argument('--qp_birnn', type='bool', default=False,
+                        help='----')
+    parser.add_argument('--qp_concat', type='bool', default=False,
+                        help='----')
+    parser.add_argument('--pp_bottleneck', type='bool', default=True,
+                        help='---')
+    parser.add_argument('--pp_birnn', type='bool', default=False,
+                        help='----')
+    parser.add_argument('--pp_concat', type='bool', default=False,
+                        help='----')
+
+
     # Optimization details
     parser.add_argument('--valid_metric', type=str,
                         choices=['accuracy', 'f1'], default='f1',
@@ -84,15 +99,22 @@ def add_cmdline_args(parser):
                         help='Whether to dropout the RNN output')
     parser.add_argument('--optimizer', type=str, default='adamax',
                         help='Optimizer: sgd or adamax (default)')
+    """
     parser.add_argument('--learning_rate', '-lr', type=float, default=0.1,
                         help='Learning rate for SGD (default 0.1)')
+                        """
+    parser.add_argument('--learning_rate', '-lr', type=float, default=0.002,
+                        help='Learning rate for Adamax (default 0.002)')
+    
     parser.add_argument('--grad_clipping', type=float, default=10,
                         help='Gradient clipping (default 10.0)')
     parser.add_argument('--weight_decay', type=float, default=0,
                         help='Weight decay (default 0)')
     parser.add_argument('--momentum', type=float, default=0,
                         help='Momentum (default 0)')
-
+    parser.add_argument('--lrate_decay', type=bool, default=False,
+                        help='-----')
+    
     # Model-specific
     parser.add_argument('--concat_rnn_layers', type='bool', default=True)
     parser.add_argument('--question_merge', type=str, default='self_attn',

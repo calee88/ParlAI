@@ -155,7 +155,10 @@ def vectorize(opt, ex, word_dict, char_dict, feature_dict):
 
 
     #return document, features, question, start, end
-    return document, features, question, document_char, question_char, start, end  # document_char, question_char : np.array
+    if opt['add_char2word']:
+        return document, features, question, document_char, question_char, start, end  # document_char, question_char : np.array
+    else:
+        return document, features, question, start, end
 
 
 #def batchify(batch, null=0, cuda=False):
@@ -165,17 +168,19 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
     NUM_INPUTS = 3 # doc(word) + feature + ques(word)
     #NUM_INPUTS = 5  # doc(word) + feature + ques(word) + doc(char) + ques(char)
 
+    n_word_idx=0
+    n_sent_label=0
     if sent_predict:
         NUM_INPUTS += 2
-        n_word_idx=3
-        n_sent_label=4
+        n_word_idx+=3
+        n_sent_label+=4
     if use_char:
         NUM_INPUTS += 2
         n_doc_char=3
         n_ques_char=4
         n_word_idx+=2
         n_sent_label+=2
-
+        
     NUM_TARGETS = 2
     NUM_EXTRA = 2
 
