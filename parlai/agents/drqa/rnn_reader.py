@@ -4,8 +4,15 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 import torch
+import sys
 import torch.nn as nn
 from . import layers
+from os import path
+import torch.nn.functional as F
+
+sys.path.append(path.abspath('../../../ptrnet/src'))
+from pointer import PointerNetwork
+from pointer import LinearTanhSeqAttn
 
 
 class RnnDocReader(nn.Module):
@@ -79,19 +86,21 @@ class RnnDocReader(nn.Module):
         if opt['question_merge'] not in ['avg', 'self_attn']:
             raise NotImplementedError('merge_mode = %s' % opt['merge_mode'])
         if opt['question_merge'] == 'self_attn':
-            self.self_attn = layers.LinearSeqAttn(question_hidden_size)
+            self.self_attn = LinearTanhSeqAttn(question_hidden_size, question_hidden_size)
 
-        # Bilinear attention for span start/end
-        self.start_attn = layers.BilinearSeqAttn(
-            doc_hidden_size,
-            question_hidden_size,
-        )
-        self.end_attn = layers.BilinearSeqAttn(
-            doc_hidden_size,
-            question_hidden_size,
-        )
+        self.ptrnet = PointerNetwork(doc_hidden_size, doc_hidden_size, 1, opt['batchsize'], decoder_length=2)
 
-    def forward(self, x1, x1_f, x1_mask, x2, x2_mask):
+        # # Bilinear attention for span start/end
+        # self.start_attn = layers.BilinearSeqAttn(
+        #     doc_hidden_size,
+        #     question_hidden_size,
+        # )
+        # self.end_attn = layers.BilinearSeqAttn(
+        #     doc_hidden_size,
+        #     question_hidden_size,
+        # )
+
+    def forward(self, x1, x1_f, x1_mask, x2, x2_mask, decoder_inputs=None):
         """Inputs:
         x1 = document word indices             [batch * len_d]
         x1_f = document word features indices  [batch * len_d * nfeat]
@@ -128,7 +137,21 @@ class RnnDocReader(nn.Module):
             q_merge_weights = self.self_attn(question_hiddens, x2_mask)
         question_hidden = layers.weighted_avg(question_hiddens, q_merge_weights)
 
+        # Create decoder_inputs based on doc_hiddens
+        decoder_inputs = [doc_hiddens[:, i, :] for i in decoder_inputs]
+
         # Predict start and end positions
-        start_scores = self.start_attn(doc_hiddens, question_hidden, x1_mask)
-        end_scores = self.end_attn(doc_hiddens, question_hidden, x1_mask)
+        scores = self.ptrnet(doc_hiddens.transpose(0, 1), decoder_inputs, question_hidden, x1_mask)
+
+        if self.training:
+            # In training we output log-softmax for NLL
+            start_scores = F.log_softmax(scores[0])
+            end_scores = F.log_softmax(scores[1])
+        else:
+            # ...Otherwise 0-1 probabilities
+            start_scores = F.softmax(scores[0])
+            end_scores = F.softmax(scores[1])
+
+        # start_scores = self.start_attn(doc_hiddens, question_hidden, x1_mask)
+        # end_scores = self.end_attn(doc_hiddens, question_hidden, x1_mask)
         return start_scores, end_scores
