@@ -95,5 +95,7 @@ case "$exp" in
 	h15-fix-bi-ldecay-44) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --gpu $gpuid --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1  
 	;;
 	debug) python $script -t squad --model_file $exp_dir/exp$exp --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --tune_partial 1000   ## r-net For debug
+	;;
+	h15-fix-bi-ldecay-44-debug) python $script -t squad --model_file $exp_dir/exp$exp --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --gpu $gpuid --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1
 esac
 

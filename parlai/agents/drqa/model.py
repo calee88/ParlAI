@@ -135,6 +135,7 @@ class DocReaderModel(object):
             target_sent = Variable(torch.from_numpy(np.asarray(ex[self.input_idx_bdy+1])).cuda(async=True))
 
         # Run forward
+        #pdb.set_trace()
         score_list = self.network(*inputs)
 
         if len(score_list) == 3:
