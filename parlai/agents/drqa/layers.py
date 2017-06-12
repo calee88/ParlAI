@@ -8,11 +8,61 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+import numpy as np
+
+import pdb
 
 # ------------------------------------------------------------------------------
 # Modules
 # ------------------------------------------------------------------------------
 
+
+class Selective_Meanpool(nn.Module):
+    def __init__(self, input_size):
+        super(Selective_Meanpool, self).__init__()
+        self.input_size = input_size
+
+    def forward(self, x, word_end):
+        """Mean pool across word boundary."""
+
+        # x : N x Tword x H (32 x 500 x 768)
+        # word_end : word end index of each paragraph, list
+
+        nBatch = len(word_end)
+        maxSent = len(max(word_end, key=len))
+
+        outputs = []
+
+        #pdb.set_trace()
+        for n in range(nBatch):
+            outputs_batch = []
+            startend = np.insert(word_end[n], 0, -1)
+            nSentence = len(startend)-1
+
+            #start_idx = Variable(torch.from_numpy(startend[:-1]) + 1)  # Variable,
+            #end_idx = Variable(torch.from_numpy(startend[1:]) )         # Variable
+
+            start_idx = startend[:-1] + 1  # numpy.array
+            end_idx = startend[1:] # numpy.array
+
+            for s in range(nSentence):
+                end_idx_real = end_idx[s]+1
+                if end_idx_real < 0 :
+                    end_idx_real = x.size()[1]
+                meanpool_idx = torch.from_numpy(np.arange(start_idx[s], end_idx_real))
+                meanpool_idx = Variable(meanpool_idx.cuda(async=True))
+                outputs_batch.append(torch.mean(x[n,:, :].index_select(0, meanpool_idx),0))
+
+            if nSentence < maxSent:  # zero tensor padding
+                outputs_batch.append(Variable(torch.zeros(maxSent-nSentence, x.size()[-1]).cuda(async=True), requires_grad=False))
+
+            outputs_batch_tensor = torch.cat(outputs_batch, 0)
+            outputs.append(outputs_batch_tensor)
+
+        #pdb.set_trace()
+        output = torch.stack(outputs, 0)
+
+        return output
 
 class StackedBRNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers,
@@ -35,6 +85,7 @@ class StackedBRNN(nn.Module):
         """Can choose to either handle or ignore variable length sequences.
         Always handle padding in eval.
         """
+
         # No padding necessary.
         if x_mask.data.sum() == 0:
             return self._forward_unpadded(x, x_mask)
@@ -46,6 +97,9 @@ class StackedBRNN(nn.Module):
 
     def _forward_unpadded(self, x, x_mask):
         """Faster encoding that ignores any padding."""
+
+        #pdb.set_trace()
+
         # Transpose batch and sequence dims
         x = x.transpose(0, 1)
 
@@ -82,6 +136,7 @@ class StackedBRNN(nn.Module):
     def _forward_padded(self, x, x_mask):
         """Slower (significantly), but more precise,
         encoding that handles padding."""
+
         # Compute sorted sequence lengths
         lengths = x_mask.data.eq(0).long().sum(1).squeeze()
         _, idx_sort = torch.sort(lengths, dim=0, descending=True)
@@ -201,6 +256,7 @@ class BilinearSeqAttn(nn.Module):
         y = batch * h2
         x_mask = batch * len
         """
+        #pdb.set_trace()
         Wy = self.linear(y) if self.linear is not None else y
         xWy = x.bmm(Wy.unsqueeze(2)).squeeze(2)
         xWy.data.masked_fill_(x_mask.data, -float('inf'))

@@ -1,0 +1,747 @@
+[datapath:/data/kenkim/ParlAI/data]
+[task:babi:task1k:1,squad]
+[no_images:False]
+[num_examples:100]
+[batchsize:1]
+[numthreads:1]
+[download_path:/data/kenkim/ParlAI/downloads]
+[datatype:train]
+[parlai_home:/data/kenkim/ParlAI]
+[creating task(s): babi:task1k:1,squad]
+[creating world: babi:task1k:1]
+[DialogTeacher initializing.]
+[loading fbdialog data:/data/kenkim/ParlAI/data/bAbI/tasks_1-20_v1-2/en-valid-nosf/qa1_train.txt]
+[creating world: squad]
+[DialogTeacher initializing.]
+loading: /data/kenkim/ParlAI/data/SQuAD/train-v1.1.json
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Mary went to the kitchen.
+John went back to the bedroom.
+Where is Mary?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Mary went back to the bathroom.
+Mary moved to the hallway.
+Where is John?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: John went to the kitchen.
+Daniel travelled to the bedroom.
+Where is Daniel?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Mary travelled to the office.
+Sandra moved to the bedroom.
+Where is John?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: John moved to the bedroom.
+Sandra journeyed to the kitchen.
+Where is Sandra?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The Greater Hyderabad Municipal Corporation (GHMC) oversees the civic infrastructure of the city's 18 "circles", which together encompass 150 municipal wards. Each ward is represented by a corporator, elected by popular vote. The corporators elect the Mayor, who is the titular head of GHMC; executive powers rest with the Municipal Commissioner, appointed by the state government. The GHMC carries out the city's infrastructural work such as building and maintenance of roads and drains, town planning including construction regulation, maintenance of municipal markets and parks, solid waste management, the issuing of birth and death certificates, the issuing of trade licences, collection of property tax, and community welfare services such as mother and child healthcare, and pre-school and non-formal education. The GHMC was formed in April 2007 by merging the Municipal Corporation of Hyderabad (MCH) with 12 municipalities of the Hyderabad, Ranga Reddy and Medak districts covering a total area of 650 km2 (250 sq mi).:3 In the 2016 municipal election, the Telangana Rashtra Samithi formed the majority and the present Mayor is Bonthu Ram Mohan. The Secunderabad Cantonment Board is a civic administration agency overseeing an area of 40.1 km2 (15.5 sq mi),:93 where there are several military camps.:2 The Osmania University campus is administered independently by the university authority.:93
+What is the entity that controls the infrastructure of Hyderabad?
+[labels: The Greater Hyderabad Municipal Corporation (GHMC)]
+   [RepeatLabelAgent]: The Greater Hyderabad Municipal Corporation (GHMC)
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: John journeyed to the bedroom.
+Mary moved to the garden.
+Where is John?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Mary journeyed to the bathroom.
+Mary travelled to the garden.
+Where is John?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Mary went back to the bedroom.
+Sandra went back to the office.
+Where is Mary?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Sandra travelled to the bathroom.
+Sandra travelled to the kitchen.
+Where is Sandra?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Sandra moved to the hallway.
+Mary went to the bathroom.
+Where is Sandra?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The Slavs under name of the Antes and the Sclaveni make their first appearance in Byzantine records in the early 6th century. Byzantine historiographers under Justinian I (527–565), such as Procopius of Caesarea, Jordanes and Theophylact Simocatta describe tribes of these names emerging from the area of the Carpathian Mountains, the lower Danube and the Black Sea, invading the Danubian provinces of the Eastern Empire.
+The Slavs were under what name in the early 6th century?
+[labels: the Antes and the Sclaveni]
+   [RepeatLabelAgent]: the Antes and the Sclaveni
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: South Tucson is actually the name of an independent, incorporated town of 1 sq mi (2.6 km2), completely surrounded by the city of Tucson, sitting just south of downtown. South Tucson has a colorful, dynamic history. It was first incorporated in 1936, and later reincorporated in 1940. The population consists of about 83% Mexican-American and 10% Native American residents. South Tucson is widely known for its many Mexican restaurants and the architectural styles which include bright outdoor murals, many of which have been painted over due to city policy.
+How much of South Tucson is Native American?
+[labels: 10%]
+   [RepeatLabelAgent]: 10%
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: Old English contained a certain number of loanwords from Latin, which was the scholarly and diplomatic lingua franca of Western Europe. It is sometimes possible to give approximate dates for the borrowing of individual Latin words based on which patterns of sound change they have undergone. Some Latin words had already been borrowed into the Germanic languages before the ancestral Angles and Saxons left continental Europe for Britain. More entered the language when the Anglo-Saxons were converted to Christianity and Latin-speaking priests became influential. It was also through Irish Christian missionaries that the Latin alphabet was introduced and adapted for the writing of Old English, replacing the earlier runic system. Nonetheless, the largest transfer of Latin-based (mainly Old French) words into English occurred after the Norman Conquest of 1066, and thus in the Middle English rather than the Old English period.
+Before the introduction of the Latin alphabet, how was Old English written?
+[labels: runic system]
+   [RepeatLabelAgent]: runic system
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: In France the Cathars grew to represent a popular mass movement and the belief was spreading to other areas. The Cathar Crusade was initiated by the Roman Catholic Church to eliminate the Cathar heresy in Languedoc. Heresy was a major justification for the Inquisition (Inquisitio Haereticae Pravitatis, Inquiry on Heretical Perversity) and for the European wars of religion associated with the Protestant Reformation.
+What was started by the Roman Catholic Church to dispense of the Cathars in Languedoc?
+[labels: The Cathar Crusade]
+   [RepeatLabelAgent]: The Cathar Crusade
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Sandra went to the bathroom.
+Daniel went to the bedroom.
+Where is Sandra?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Mary went to the garden.
+Sandra moved to the hallway.
+Where is Sandra?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+~~
+[babi:task1k:1]: Daniel journeyed to the bathroom.
+Mary journeyed to the kitchen.
+Where is Sandra?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+~~
+[babi:task1k:1]: Sandra went to the bathroom.
+John went to the kitchen.
+Where is Sandra?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Sandra went back to the kitchen.
+Sandra went to the office.
+Where is Sandra?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: A brash boosterism that had typified Melbourne during this time ended in the early 1890s with a severe depression of the city's economy, sending the local finance and property industries into a period of chaos during which 16 small "land banks" and building societies collapsed, and 133 limited companies went into liquidation. The Melbourne financial crisis was a contributing factor in the Australian economic depression of the 1890s and the Australian banking crisis of 1893. The effects of the depression on the city were profound, with virtually no new construction until the late 1890s.
+When did new construction start in Melbourne?
+[labels: late 1890s]
+   [RepeatLabelAgent]: late 1890s
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: John went to the bedroom.
+John went back to the office.
+Where is John?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: Daniel moved to the bathroom.
+Mary journeyed to the garden.
+Where is Daniel?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Sandra moved to the kitchen.
+Sandra went to the bathroom.
+Where is John?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: Daniel went to the bedroom.
+Sandra went to the hallway.
+Where is Sandra?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+~~
+[babi:task1k:1]: John went back to the bedroom.
+Mary moved to the kitchen.
+Where is John?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Daniel went to the kitchen.
+Mary went back to the bedroom.
+Where is Mary?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Sandra travelled to the kitchen.
+Daniel moved to the garden.
+Where is Sandra?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Sandra moved to the hallway.
+Mary moved to the kitchen.
+Where is Daniel?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: Mary went back to the hallway.
+Mary moved to the office.
+Where is Mary?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: Daniel went to the bedroom.
+Daniel moved to the kitchen.
+Where is Daniel?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: John went back to the hallway.
+Sandra moved to the bedroom.
+Where is Sandra?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Sandra went to the bathroom.
+Daniel went back to the office.
+Where is Daniel?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: Sandra went to the kitchen.
+Sandra moved to the bedroom.
+Where is Daniel?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: John journeyed to the garden.
+Mary travelled to the hallway.
+Where is Mary?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+~~
+[babi:task1k:1]: Mary went to the office.
+Daniel travelled to the bedroom.
+Where is Sandra?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: German historian Reinhart Koselleck claimed that "On the Continent there were two social structures that left a decisive imprint on the Age of Enlightenment: the Republic of Letters and the Masonic lodges." Scottish professor Thomas Munck argues that "although the Masons did promote international and cross-social contacts which were essentially non-religious and broadly in agreement with enlightened values, they can hardly be described as a major radical or reformist network in their own right." Many of the Masons values seemed to greatly appeal to Enlightenment values and thinkers. Diderot discusses the link between Freemason ideals and the enlightenment in D'Alembert's Dream, exploring masonry as a way of spreading enlightenment beliefs. Historian Margaret Jacob stresses the importance of the Masons in indirectly inspiring enlightened political thought. On the negative side, Daniel Roche contests claims that Masonry promoted egalitarianism. He argues that the lodges only attracted men of similar social backgrounds. The presence of noble women in the French "lodges of adoption" that formed in the 1780s was largely due to the close ties shared between these lodges and aristocratic society.
+Historian Margaret Jacob stresses the importance of the Masons in indirectly inspriting what type of thinking?
+[labels: political thought]
+   [RepeatLabelAgent]: political thought
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: John went to the bathroom.
+John moved to the office.
+Where is John?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: John went to the hallway.
+Sandra journeyed to the hallway.
+Where is John?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+~~
+[babi:task1k:1]: John journeyed to the bathroom.
+Daniel went to the bathroom.
+Where is John?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Sandra moved to the garden.
+John moved to the office.
+Where is John?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: Sandra moved to the hallway.
+Daniel went to the kitchen.
+Where is Daniel?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The Buddha's death is seen as an illusion, he is living on in other planes of existence, and monks are therefore permitted to offer "new truths" based on his input. Mahayana also differs from Theravada in its concept of śūnyatā (that ultimately nothing has existence), and in its belief in bodhisattvas (enlightened people who vow to continue being reborn until all beings can be enlightened).
+Buddha's death is seen as an illusion, as he is living in other planes of what?
+[labels: existence]
+   [RepeatLabelAgent]: existence
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The two largest metropolitan areas have subway systems: Lisbon Metro and Metro Sul do Tejo in the Lisbon Metropolitan Area and Porto Metro in the Porto Metropolitan Area, each with more than 35 km (22 mi) of lines. In Portugal, Lisbon tram services have been supplied by the Companhia de Carris de Ferro de Lisboa (Carris), for over a century. In Porto, a tram network, of which only a tourist line on the shores of the Douro remain, began construction on 12 September 1895 (a first for the Iberian Peninsula). All major cities and towns have their own local urban transport network, as well as taxi services.
+For how long has the Libon tram service existed?
+[labels: over a century]
+   [RepeatLabelAgent]: over a century
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: Essential genes are the set of genes thought to be critical for an organism's survival. This definition assumes the abundant availability of all relevant nutrients and the absence of environmental stress. Only a small portion of an organism's genes are essential. In bacteria, an estimated 250–400 genes are essential for Escherichia coli and Bacillus subtilis, which is less than 10% of their genes. Half of these genes are orthologs in both organisms and are largely involved in protein synthesis. In the budding yeast Saccharomyces cerevisiae the number of essential genes is slightly higher, at 1000 genes (~20% of their genes). Although the number is more difficult to measure in higher eukaryotes, mice and humans are estimated to have around 2000 essential genes (~10% of their genes).
+What does the definition of essential genes assume an absence of?
+[labels: environmental stress]
+   [RepeatLabelAgent]: environmental stress
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Daniel journeyed to the bedroom.
+John went to the kitchen.
+Where is Daniel?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Mary moved to the office.
+Sandra travelled to the bathroom.
+Where is Sandra?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Mary went to the kitchen.
+Sandra journeyed to the bedroom.
+Where is Mary?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Sandra journeyed to the office.
+Daniel went back to the bathroom.
+Where is Daniel?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Mary went back to the office.
+John went back to the office.
+Where is Sandra?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Mary went to the kitchen.
+John went back to the bedroom.
+Where is Mary?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Mary went back to the bathroom.
+Mary moved to the hallway.
+Where is John?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: John went to the kitchen.
+Daniel travelled to the bedroom.
+Where is Daniel?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Mary travelled to the office.
+Sandra moved to the bedroom.
+Where is John?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: John moved to the bedroom.
+Sandra journeyed to the kitchen.
+Where is Sandra?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: In 1803, an Act of Parliament, promoted by the East India Company, established the East India Dock Company, with the aim of establishing a new set of docks (the East India Docks) primarily for the use of ships trading with India. The existing Brunswick Dock, part of the Blackwall Yard site, became the Export Dock; while a new Import Dock was built to the north. In 1838 the East India Dock Company merged with the West India Dock Company. The docks were taken over by the Port of London Authority in 1909, and closed in 1967.
+What was the name of the export dock of the EIC after the 1803 act?
+[labels: Brunswick Dock]
+   [RepeatLabelAgent]: Brunswick Dock
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: John journeyed to the bathroom.
+Daniel went back to the kitchen.
+Where is Daniel?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: John journeyed to the office.
+Sandra travelled to the bedroom.
+Where is Daniel?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Daniel moved to the bathroom.
+Daniel went to the hallway.
+Where is John?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: Mary went back to the office.
+Mary went to the bathroom.
+Where is Mary?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Mary journeyed to the kitchen.
+Mary moved to the bedroom.
+Where is Mary?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: Ibn Sīnā wrote extensively on early Islamic philosophy, especially the subjects logic, ethics, and metaphysics, including treatises named Logic and Metaphysics. Most of his works were written in Arabic – then the language of science in the Middle East – and some in Persian. Of linguistic significance even to this day are a few books that he wrote in nearly pure Persian language (particularly the Danishnamah-yi 'Ala', Philosophy for Ala' ad-Dawla'). Ibn Sīnā's commentaries on Aristotle often criticized the philosopher,[citation needed] encouraging a lively debate in the spirit of ijtihad.
+What famous philosopher did Ibn Sina criticize heavily?
+[labels: Aristotle]
+   [RepeatLabelAgent]: Aristotle
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Sandra journeyed to the garden.
+Sandra journeyed to the kitchen.
+Where is Sandra?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Daniel journeyed to the bedroom.
+Sandra moved to the garden.
+Where is Sandra?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: Mary journeyed to the office.
+Mary journeyed to the bathroom.
+Where is Mary?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Daniel journeyed to the garden.
+Mary went back to the bedroom.
+Where is Daniel?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: Sandra went back to the kitchen.
+Sandra travelled to the bedroom.
+Where is Sandra?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Mary went back to the bedroom.
+Mary travelled to the garden.
+Where is Mary?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: John journeyed to the kitchen.
+Sandra went back to the office.
+Where is Mary?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: Mary journeyed to the bedroom.
+Sandra travelled to the bathroom.
+Where is John?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Daniel journeyed to the garden.
+Mary went back to the hallway.
+Where is Mary?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+~~
+[babi:task1k:1]: John moved to the bedroom.
+Mary travelled to the kitchen.
+Where is Daniel?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The reemergence of Cubism coincided with the appearance from about 1917–24 of a coherent body of theoretical writing by Pierre Reverdy, Maurice Raynal and Daniel-Henry Kahnweiler and, among the artists, by Gris, Léger and Gleizes. The occasional return to classicism—figurative work either exclusively or alongside Cubist work—experienced by many artists during this period (called Neoclassicism) has been linked to the tendency to evade the realities of the war and also to the cultural dominance of a classical or Latin image of France during and immediately following the war. Cubism after 1918 can be seen as part of a wide ideological shift towards conservatism in both French society and culture. Yet, Cubism itself remained evolutionary both within the oeuvre of individual artists, such as Gris and Metzinger, and across the work of artists as different from each other as Braque, Léger and Gleizes. Cubism as a publicly debated movement became relatively unified and open to definition. Its theoretical purity made it a gauge against which such diverse tendencies as Realism or Naturalism, Dada, Surrealism and abstraction could be compared.
+Name the three writers who were in part resonsible for the reemergence of Cubism between 1917 and 1924.
+[labels: Pierre Reverdy, Maurice Raynal and Daniel-Henry Kahnweiler]
+   [RepeatLabelAgent]: Pierre Reverdy, Maurice Raynal and Daniel-Henry Kahnweiler
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: Artspace on Orange Street is one of several contemporary art galleries around the city, showcasing the work of local, national, and international artists. Others include City Gallery and A. Leaf Gallery in the downtown area. Westville galleries include Kehler Liddell, Jennifer Jane Gallery, and The Hungry Eye. The Erector Square complex in the Fair Haven neighborhood houses the Parachute Factory gallery along with numerous artist studios, and the complex serves as an active destination during City-Wide Open Studios held yearly in October.
+What is the name of the art gallery that hosts multiple artist locally and around the world?
+[labels: Artspace]
+   [RepeatLabelAgent]: Artspace
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The tradition of presenting the trophy immediately after the game did not start until the 1882 final; after the first final in 1872 the trophy was not presented to the winners, Wanderers, until a reception held four weeks later in the Pall Mall Restaurant in London. Under the original rules, the trophy was to be permanently presented to any club which won the competition three times, although when inaugural winners Wanderers achieved this feat by the 1876 final, the rules were changed by FA Secretary CW Alcock (who was also captain of Wanderers in their first victory).
+What happens to multiple cup winners? 
+[labels: the trophy was to be permanently presented to any club which won the competition three times,]
+   [RepeatLabelAgent]: the trophy was to be permanently presented to any club which won the competition three times,
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The name iPod was proposed by Vinnie Chieco, a freelance copywriter, who (with others) was called by Apple to figure out how to introduce the new player to the public. After Chieco saw a prototype, he thought of the movie 2001: A Space Odyssey and the phrase "Open the pod bay door, Hal!", which refers to the white EVA Pods of the Discovery One spaceship. Chieco saw an analogy to the relationship between the spaceship and the smaller independent pods in the relationship between a personal computer and the music player. Apple researched the trademark and found that it was already in use. Joseph N. Grasso of New Jersey had originally listed an "iPod" trademark with the U.S. Patent and Trademark Office (USPTO) in July 2000 for Internet kiosks. The first iPod kiosks had been demonstrated to the public in New Jersey in March 1998, and commercial use began in January 2000, but had apparently been discontinued by 2001. The trademark was registered by the USPTO in November 2003, and Grasso assigned it to Apple Computer, Inc. in 2005.
+What was the name of the copywriter that proposed the name "iPod"?
+[labels: Vinnie Chieco]
+   [RepeatLabelAgent]: Vinnie Chieco
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: A language-independent alternative used in many countries is to hold up one's two fists with the index knuckle of the left hand against the index knuckle of the right hand. Then, starting with January from the little knuckle of the left hand, count knuckle, space, knuckle, space through the months. A knuckle represents a month of 31 days, and a space represents a short month (a 28- or 29-day February or any 30-day month). The junction between the hands is not counted, so the two index knuckles represent July and August.
+The space between knuckles is what kind of month?
+[labels: short month]
+   [RepeatLabelAgent]: short month
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Mary went to the hallway.
+Daniel went to the bathroom.
+Where is Daniel?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Mary went to the bedroom.
+Mary went to the kitchen.
+Where is Mary?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Daniel moved to the garden.
+Daniel went to the office.
+Where is Daniel?
+[labels: office]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: office
+~~
+[babi:task1k:1]: John went to the kitchen.
+Sandra travelled to the garden.
+Where is John?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+~~
+[babi:task1k:1]: Mary journeyed to the hallway.
+Sandra went back to the hallway.
+Where is Sandra?
+[labels: hallway]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: hallway
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: Four boarders at his parents' apartments became Chopin's intimates: Tytus Woyciechowski, Jan Nepomucen Białobłocki, Jan Matuszyński and Julian Fontana; the latter two would become part of his Paris milieu. He was friendly with members of Warsaw's young artistic and intellectual world, including Fontana, Józef Bohdan Zaleski and Stefan Witwicki. He was also attracted to the singing student Konstancja Gładkowska. In letters to Woyciechowski, he indicated which of his works, and even which of their passages, were influenced by his fascination with her; his letter of 15 May 1830 revealed that the slow movement (Larghetto) of his Piano Concerto No. 1 (in E minor) was secretly dedicated to her – "It should be like dreaming in beautiful springtime – by moonlight." His final Conservatory report (July 1829) read: "Chopin F., third-year student, exceptional talent, musical genius."
+Which of Chopin's works was unknowingly dedicated to Gladkowska?
+[labels: Piano Concerto No. 1 (in E minor)]
+   [RepeatLabelAgent]: Piano Concerto No. 1 (in E minor)
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: John travelled to the garden.
+Daniel journeyed to the bedroom.
+Where is John?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: Sandra went back to the garden.
+Mary went to the kitchen.
+Where is John?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: John travelled to the kitchen.
+Sandra moved to the bedroom.
+Where is Sandra?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Daniel moved to the garden.
+Daniel travelled to the bedroom.
+Where is Daniel?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: Mary journeyed to the office.
+Sandra moved to the bathroom.
+Where is Daniel?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: Nevertheless, the ethno-geographic caste hierarchy favoring the Mongols and other ethnicities were accorded higher status than the Han Chinese majority. Although Han Chinese who were recruited as advisers were often actually more influential than high officials, their status was not as well defined. Kublai also abolished the imperial examinations of China's civil service legacy, which was not reinstated until Ayurbarwada Buyantu Khan's reign (1311–1320). Rossabi writes that Kublai recognized that in order to rule China, "he had to employ Chinese advisors and officials, yet he could not rely totally on Chinese advisers because he had to maintain a delicate balancing act between ruling the sedentary civilization of China and preserving the cultural identity and values of the Mongols." And "in governing China, he was concerned with the interests of his Chinese subjects, but also with exploiting the resources of the empire for his own aggrandizement. His motivations and objectives alternated from one to the other throughout his reign," according to Rossabi. Van Praag writes in The Status of Tibet that the Tibetans and Mongols, on the other hand, upheld a dual system of rule and an interdependent relationship that legitimated the succession of Mongol khans as universal Buddhist rulers, or chakravartin. Van Praag writes that "Tibet remained a unique part of the Empire and was never fully integrated into it," citing examples such as a licensed border market that existed between China and Tibet during the Yuan.
+During the Yuan what existed between China and Tibet? 
+[labels: a licensed border market]
+   [RepeatLabelAgent]: a licensed border market
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: John met the rebel leaders at Runnymede, near Windsor Castle, on 15 June 1215. Langton's efforts at mediation created a charter capturing the proposed peace agreement; it was later renamed Magna Carta, or "Great Charter". The charter went beyond simply addressing specific baronial complaints, and formed a wider proposal for political reform, albeit one focusing on the rights of free men, not serfs and unfree labour. It promised the protection of church rights, protection from illegal imprisonment, access to swift justice, new taxation only with baronial consent and limitations on scutage and other feudal payments. A council of twenty-five barons would be created to monitor and ensure John's future adherence to the charter, whilst the rebel army would stand down and London would be surrendered to the king.
+The peace agreement was renamed what?
+[labels: Magna Carta]
+   [RepeatLabelAgent]: Magna Carta
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: In 1832, South Carolina passed an ordinance of nullification, a procedure by which a state could, in effect, repeal a federal law; it was directed against the most recent tariff acts. Soon, federal soldiers were dispensed to Charleston's forts, and five United States Coast Guard cutters were detached to Charleston Harbor "to take possession of any vessel arriving from a foreign port, and defend her against any attempt to dispossess the Customs Officers of her custody until all the requirements of law have been complied with." This federal action became known as the Charleston incident. The state's politicians worked on a compromise law in Washington to gradually reduce the tariffs.
+After South Carolina passed an ordinance of nullification, who was sent to Charleston's forts?
+[labels: federal soldiers]
+   [RepeatLabelAgent]: federal soldiers
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: By the turn of the 20th century, fears had begun to grow in Britain that it would no longer be able to defend the metropole and the entirety of the empire while at the same time maintaining the policy of "splendid isolation". Germany was rapidly rising as a military and industrial power and was now seen as the most likely opponent in any future war. Recognising that it was overstretched in the Pacific and threatened at home by the Imperial German Navy, Britain formed an alliance with Japan in 1902 and with its old enemies France and Russia in 1904 and 1907, respectively.
+Which country did Britain ally with in 1902?
+[labels: Japan]
+   [RepeatLabelAgent]: Japan
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: In 1983, New York State Attorney General Robert Abrams filed suit in the United States District Court for the Northern District of New York to compel GE to pay for the cleanup of what was claimed to be more than 100,000 tons of chemicals dumped from their plant in Waterford, New York. In 1999, the company agreed to pay a $250 million settlement in connection with claims it polluted the Housatonic River (Pittsfield, Massachusetts) and other sites with polychlorinated biphenyls (PCBs) and other hazardous substances.
+How much did GE agree to pay in claims for the pollution it caused in the Housatonic River and other sites?
+[labels: $250 million]
+   [RepeatLabelAgent]: $250 million
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 1:squad]
+[squad]: The Germanic superstrate has had different outcomes in Spanish and Catalan. For example, Catalan fang "mud" and rostir "to roast", of Germanic origin, contrast with Spanish lodo and asar, of Latin origin; whereas Catalan filosa "spinning wheel" and pols "temple", of Latin origin, contrast with Spanish rueca and sien, of Germanic origin.
+What has different results in Spanish and Catalan?
+[labels: Germanic superstrate]
+   [RepeatLabelAgent]: Germanic superstrate
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Daniel went back to the kitchen.
+Daniel moved to the garden.
+Where is Daniel?
+[labels: garden]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: garden
+~~
+[babi:task1k:1]: Sandra journeyed to the bedroom.
+Mary moved to the bathroom.
+Where is Sandra?
+[labels: bedroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bedroom
+~~
+[babi:task1k:1]: John went back to the office.
+Daniel went back to the bathroom.
+Where is Daniel?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Daniel travelled to the bedroom.
+Sandra went to the bathroom.
+Where is Mary?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~
+[babi:task1k:1]: Daniel went back to the hallway.
+Sandra travelled to the kitchen.
+Where is Sandra?
+[labels: kitchen]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: kitchen
+- - - - - - - - - - - - - - - - - - - - -
+~~
+[world 0:babi:task1k:1]
+[babi:task1k:1]: Sandra travelled to the office.
+Sandra travelled to the bathroom.
+Where is Sandra?
+[labels: bathroom]
+[cands: office|hallway|bathroom|garden|kitchen|bedroom]
+   [RepeatLabelAgent]: bathroom
+~~

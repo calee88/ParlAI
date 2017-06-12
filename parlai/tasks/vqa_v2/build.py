@@ -16,7 +16,6 @@ def buildImage(opt):
         print('[building image data: ' + dpath + ']')
         build_data.remove_dir(dpath)
         build_data.make_dir(dpath)
-
         # download the image data.
         fname1 = 'train2014.zip'
         fname2 = 'val2014.zip'
@@ -24,16 +23,17 @@ def buildImage(opt):
 
         url = 'http://msvocds.blob.core.windows.net/coco2014/'
 
-        build_data.download(url + fname1, dpath, fname1)
-        build_data.download(url + fname2, dpath, fname2)
-        build_data.download(url + fname3, dpath, fname3)
+        build_data.download(dpath, url + fname1)
+        build_data.download(dpath, url + fname2)
+        build_data.download(dpath, url + fname3)
 
-        build_data.untar(dpath, fname1)
-        build_data.untar(dpath, fname2)
-        build_data.untar(dpath, fname3)
+        build_data.untar(dpath, fname1, False)
+        build_data.untar(dpath, fname2, False)
+        build_data.untar(dpath, fname3, False)
 
         # Mark the data as built.
         build_data.mark_done(dpath)
+
 
 
 def build(opt):
@@ -53,12 +53,12 @@ def build(opt):
         fname5 = 'v2_Annotations_Train_mscoco.zip'
 
         url = 'http://visualqa.org/data/mscoco/vqa/'
-        build_data.download(url + fname1, dpath, fname1)
-        build_data.download(url + fname2, dpath, fname2)
-        build_data.download(url + fname3, dpath, fname3)
+        build_data.download(dpath, url + fname1)
+        build_data.download(dpath, url + fname2)
+        build_data.download(dpath, url + fname3)
 
-        build_data.download(url + fname4, dpath, fname4)
-        build_data.download(url + fname5, dpath, fname5)
+        build_data.download(dpath, url + fname4)
+        build_data.download(dpath, url + fname5)
 
         build_data.untar(dpath, fname1)
         build_data.untar(dpath, fname2)

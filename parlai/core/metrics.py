@@ -4,13 +4,15 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 """Provides standard metric evaluations for dialog.
-Uses locking and shared memory when ``numthreads`` is set to >1 to share metrics
+Uses locking and shared memory when numthreads is set to >1 to share metrics
 between processes.
 """
 
 from .thread_utils import SharedTable
 from collections import Counter
-
+import copy
+import importlib
+import random
 import re
 import string
 
@@ -105,7 +107,7 @@ class Metrics(object):
             if text is None:
                 return
             else:
-                text_cands = [text]
+                text_cands = [ text ]
         # Now loop through text candidates, assuming they are sorted.
         # If any of them is a label then score a point.
         # maintain hits@1, 5, 10, 50, 100,  etc.

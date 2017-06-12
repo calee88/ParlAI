@@ -9,19 +9,18 @@ using the ParlAI package.
 
 import argparse
 import os
-import sys
-from parlai.core.agents import get_agent_module
+
 
 def str2bool(value):
     return value.lower() in ('yes', 'true', 't', '1', 'y')
 
 
 class ParlaiParser(object):
-    """Pseudo-extension of ``argparse`` which sets a number of parameters for the
+    """Pseudo-extension of argparse which sets a number of parameters for the
     ParlAI framework. More options can be added specific to other modules by
-    passing this object and calling ``add_arg()`` or ``add_argument()`` on it.
+    passing this object and calling `add_arg` or `add_argument` on it.
 
-    For example, see ``parlai.core.dict.DictionaryAgent.add_cmdline_args``.
+    For example, see `parlai.core.dict.DictionaryAgent.add_cmdline_args`
     """
 
     def __init__(self, add_parlai_args=True, add_model_args=False):
@@ -32,25 +31,23 @@ class ParlaiParser(object):
                             os.path.realpath(__file__)))))
         os.environ['PARLAI_HOME'] = self.parlai_home
 
-        self.add_arg = self.parser.add_argument
-        self.add_argument = self.parser.add_argument
-        self.register = self.parser.register
-
         if add_parlai_args:
             self.add_parlai_args()
         if add_model_args:
             self.add_model_args()
 
-
+        self.add_arg = self.parser.add_argument
+        self.add_argument = self.parser.add_argument
+        self.register = self.parser.register
 
     def add_parlai_data_path(self):
-        default_data_path = os.path.join(self.parlai_home, 'data')
+        default_data_path = os.path.join(self.parlai_home , 'data')
         self.parser.add_argument(
             '-dp', '--datapath', default=default_data_path,
             help='path to datasets, defaults to {parlai_dir}/data')
 
     def add_mturk_args(self):
-        default_log_path = os.path.join(self.parlai_home, 'logs', 'mturk')
+        default_log_path = os.path.join(self.parlai_home , 'logs', 'mturk')
         self.parser.add_argument(
             '--mturk-log-path', default=default_log_path,
             help='path to MTurk logs, defaults to {parlai_dir}/logs/mturk')
@@ -91,12 +88,14 @@ class ParlaiParser(object):
                  'by default: train is random with replacement, ' +
                  'valid is ordered, test is ordered.')
         self.parser.add_argument(
-            '-im', '--image-mode', default='raw', type=str,
-            help='image preprocessor to use. default is "raw". set to "none" '
-                 'to skip image loading.')
+            '-ip', '--image_preprocessor', default=None, type=str,
+            help='image preprocessor to use. default is raw (none).')
         self.parser.add_argument(
             '-nt', '--numthreads', default=1, type=int,
             help='number of threads, e.g. for hogwild')
+        self.parser.add_argument(
+            '--no-images', action='store_true',
+            help='do not load any images')
         self.parser.add_argument(
             '-bs', '--batchsize', default=1, type=int,
             help='batch size for minibatch training schemes')
@@ -107,22 +106,17 @@ class ParlaiParser(object):
             '-m', '--model', default='repeat_label',
             help='the model class name, should match parlai/agents/<model>')
         self.parser.add_argument(
+            '-mp', '--model_params', default='',
+            help='the model parameters, a string that is parsed separately '
+            + 'by the model parser after the model class is instantiated')
+        self.parser.add_argument(
             '-mf', '--model_file', default='',
             help='model file name for loading and saving models')
-        # Find which model specified, and add its specific arguments.
-        model = None
-        for index, item in enumerate(sys.argv):
-            if item == '-m' or item == '--model':
-                model = sys.argv[index + 1]
-        if model:
-            agent = get_agent_module(model)
-            if hasattr(agent, 'add_cmdline_args'):
-                agent.add_cmdline_args(self)
 
     def parse_args(self, args=None, print_args=True):
-        """Parses the provided arguments and returns a dictionary of the ``args``.
-        We specifically remove items with ``None`` as values in order to support
-        the style ``opt.get(key, default)``, which would otherwise return ``None``.
+        """Parses the provided arguments and returns a dictionary of the args.
+        We specifically remove items with `None` as values in order to support
+        the style `opt.get(key, default)`, which would otherwise return None.
         """
         self.args = self.parser.parse_args(args=args)
         self.opt = {k: v for k, v in vars(self.args).items() if v is not None}

@@ -27,6 +27,21 @@ def add_cmdline_args(parser):
     parser.add_argument('--pretrained_model', type=str, default=None,
                         help='Load dict/features/weights/opts from this file')
     parser.add_argument('--log_file', type=str, default=None)
+    parser.add_argument('--expnum', type=int, default=None)
+
+
+    # Vocabulary
+    parser.add_argument('--vocab_size', type=int, default=85629)
+    parser.add_argument('--vocab_size_char', type=int, default=100)
+    parser.add_argument('--NULLWORD_Idx_in_char', type=int, default=99)
+    parser.add_argument('--add_char2word', type='bool', default=False)
+    parser.add_argument('--nLayer_Highway', type=int, default=0)
+
+    # Answer Sentence Prediction
+    parser.add_argument('--ans_sent_predict', type='bool', default=False)
+    parser.add_argument('--nLayer_Sent', type=int, default=1)
+    parser.add_argument('--task_QA', type='bool', default=True)
+    parser.add_argument('--coeff_ans_predict', type=float, default = 0.1)
 
     # Model details
     parser.add_argument('--fix_embeddings', type='bool', default=True)
@@ -35,8 +50,14 @@ def add_cmdline_args(parser):
     parser.add_argument('--embedding_dim', type=int, default=300,
                         help=('Default embedding size if '
                               'embedding_file is not given'))
-    parser.add_argument('--hidden_size', type=int, default=128,
-                        help='Hidden size of RNN units')
+    parser.add_argument('--embedding_dim_char', type=int, default=10,
+                        help=('Default embedding size if '
+                              'embedding_file is not given'))
+    parser.add_argument('--kernels', type=list, default='[(1, 15), (2, 20), (3, 35), (4, 40), (5, 75), (6, 90)]',
+                        help=('kernel size of TDNN'))
+    parser.add_argument('--max_word_len', type=list, default=20, help=('maximum #char per word'))
+    parser.add_argument('--hidden_size', type=int, default=128, help='Hidden size of RNN units')
+    parser.add_argument('--hidden_size_sent', type=int, default=128, help='Hidden size of sentence BRNN units')
     parser.add_argument('--doc_layers', type=int, default=3,
                         help='Number of RNN layers for passage')
     parser.add_argument('--question_layers', type=int, default=3,
@@ -51,6 +72,7 @@ def add_cmdline_args(parser):
     parser.add_argument('--max_len', type=int, default=15,
                         help='The max span allowed during decoding')
     parser.add_argument('--rnn_padding', type='bool', default=False)
+    parser.add_argument('--rnn_padding_sent', type='bool', default=True)
     parser.add_argument('--display_iter', type=int, default=10,
                         help='Print train error after every \
                               <display_iter> epoches (default 10)')
@@ -112,10 +134,11 @@ def set_defaults(opt):
 def override_args(opt, override_opt):
     # Major model args are reset to the values in override_opt.
     # Non-architecture args (like dropout) are kept.
-    args = set(['embedding_file', 'embedding_dim', 'hidden_size', 'doc_layers',
+    args = set(['embedding_file', 'embedding_dim', 'embedding_dim_char',  'kernels', 'hidden_size', 'doc_layers',
                 'question_layers', 'rnn_type', 'optimizer', 'concat_rnn_layers',
                 'question_merge', 'use_qemb', 'use_in_question', 'use_tf',
-                'vocab_size', 'num_features', 'use_time'])
+                'vocab_size', 'vocab_size_char', 'num_features', 'use_time',
+                'nLayer_Highway', 'expnum', 'ans_sent_predict', 'task_QA', 'sent_layers'])
     for k, v in override_opt.items():
         if k in args:
             opt[k] = v

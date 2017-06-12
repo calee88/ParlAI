@@ -25,13 +25,18 @@ import copy
 import sys
 import random
 
-from parlai.agents.drqa.drqa import SimpleDictionaryAgent
-from parlai.agents.drqa.drqa import DocReaderAgent
-from parlai.core.utils import Timer
+import os.path
+import pickle
+
+from parlai.agents.drqa.agents import SimpleDictionaryAgent
+from parlai.agents.drqa.agents import SimpleCharDictionaryAgent
+from parlai.agents.drqa.agents import DocReaderAgent
+from parlai.agents.drqa.utils import Timer
 from parlai.core.worlds import DialogPartnerWorld
 from parlai.core.params import ParlaiParser
 from parlai.core.worlds import create_task
 
+import pdb
 
 def build_dict(opt):
     opt = copy.deepcopy(opt)
@@ -39,16 +44,37 @@ def build_dict(opt):
     dictionary = SimpleDictionaryAgent(opt)
 
     # We use the train set to build the dictionary.
-    logger.info('[ Building dictionary... ]')
+    logger.info('[ Building word dictionary... ]')
     opt['datatype'] = 'train:ordered'
     world = create_task(opt, dictionary)
     for _ in world:
         world.parley()
 
-    dictionary.sort()
+    #dictionary.sort()
+    nKeep=opt['vocab_size']
+    dictionary.sort_and_keep(nKeep)
     logger.info('[ Dictionary built. ]')
     logger.info('[ Num words = %d ]' % len(dictionary))
     return dictionary
+
+def build_dict_char(opt):
+    opt = copy.deepcopy(opt)
+    opt['batchsize'] = 1
+    dictionary = SimpleCharDictionaryAgent(opt)
+
+    # We use the train set to build the dictionary.
+    logger.info('[ Building character dictionary... ]')
+    opt['datatype'] = 'train:ordered'
+    world = create_task(opt, dictionary)
+    for _ in world:
+        world.parley()
+
+    nKeep=opt['vocab_size_char']
+    dictionary.sort_and_keep(nKeep, True)
+    logger.info('[ Dictionary built. ]')
+    logger.info('[ Num chars = %d ]' % len(dictionary))
+    return dictionary
+
 
 
 def validate(opt, agent, n_iter):
@@ -57,9 +83,21 @@ def validate(opt, agent, n_iter):
     valid_world = create_task(opt, agent)
 
     logger.info('[ Running validation... ]')
+
+    # Sent prediction
+    valid_world.world.agents[1].opt['ans_sent_predict'] = False
+    valid_world.world.agents[1].model.network.opt['ans_sent_predict'] = False  # disable sentence predicction by default
+    if opt['ans_sent_predict']:
+        valid_world.world.agents[1].model.input_idx_bdy -= 1
+
+
     valid_time = Timer()
+
+    # pdb.set_trace()
     for _ in valid_world:
+        #pdb.set_trace()
         valid_world.parley()
+
 
     metrics = valid_world.report()
     if 'tasks' in metrics:
@@ -77,18 +115,64 @@ def validate(opt, agent, n_iter):
         )
     logger.info('[ Done. Time = %.2f (s) ]' % valid_time.time())
 
+    valid_world.world.agents[1].opt['ans_sent_predict'] = opt['ans_sent_predict'] # recover
+    valid_world.world.agents[1].model.network.opt['ans_sent_predict'] = opt['ans_sent_predict']  # recover
+    if opt['ans_sent_predict']:
+        valid_world.world.agents[1].model.input_idx_bdy += 1
+
     return metrics[opt['valid_metric']]
 
 
 def main(opt):
-    # Build dictionary from task data
-    if 'pretrained_model' in opt:
-        dictionary = None
+    #iter_global = 0
+
+    # Build word dictionary from task data
+    if os.path.isfile(("data/SQuAD/dict.word." + str(opt['vocab_size']) + ".pkl")):
+        dictionary = pickle.load( open( ("data/SQuAD/dict.word." + str(opt['vocab_size']) + ".pkl"), "rb") )       # word dictionary
+        logger.info('successfully load word dictionary')
     else:
-        dictionary = build_dict(opt)
+        if 'pretrained_model' in opt:
+            dictionary = None
+        else:
+            dictionary = build_dict(opt)
+        pickle.dump( dictionary , open( ("data/SQuAD/dict.word." + str(opt['vocab_size']) + ".pkl"), "wb") )
+
+    dictionary_char=None
+    if opt['add_char2word']:
+        if os.path.isfile(("data/SQuAD/dict.char." + str(opt['vocab_size_char']) + ".pkl")):
+            dictionary_char = pickle.load( open( ("data/SQuAD/dict.char." + str(opt['vocab_size_char']) + ".pkl"), "rb") )  # char dictionary
+            logger.info('successfully load char dictionary')
+        else:
+            # Build char dictionary from task data
+            dictionary_char = build_dict_char(opt)
+            pickle.dump( dictionary_char , open( ("data/SQuAD/dict.char." + str(opt['vocab_size_char']) + ".pkl"), "wb") )
+
+        # Figure out max word len
+
+        # figuring out max_word_len from word dictionary is not valid choice ==> which is 25
+        #opt['max_word_len'] = -100 # initialize
+        #for i in range(len(dictionary)):
+    #        cur_word_len = len(dictionary[i])
+    #        if opt['max_word_len'] < cur_word_len:
+    #            opt['max_word_len'] = cur_word_len
+
+        # just set as hyperparameter in config.py
+        logger.info('maximum word len = %d' % (opt['max_word_len']))
+
+        # Calculate TDNN embedding dim (after applying TDNN to char tensor)
+        opt['kernels'] = ''.join(opt['kernels'])
+        if isinstance(opt['kernels'], str):
+               opt['kernels'] = eval(opt['kernels']) # convert string list of tuple --> list of tuple
+        opt['embedding_dim_TDNN']=0
+        for i, n in enumerate(opt['kernels']):
+            opt['embedding_dim_TDNN'] += n[1]
+
+        logger.info('TDNN embedding dim = %d' % (opt['embedding_dim_TDNN']))
+
+    #pdb.set_trace()
 
     # Build document reader
-    doc_reader = DocReaderAgent(opt, word_dict=dictionary)
+    doc_reader = DocReaderAgent(opt, word_dict=dictionary, char_dict=dictionary_char)
 
     # Log params
     logger.info('[ Created with options: ] %s' %
@@ -107,14 +191,17 @@ def main(opt):
     logger.info("[ Ok, let's go... ]")
     iteration = 0
     while impatience < opt['patience']:
+
         # Train...
         logger.info('[ Training for %d iters... ]' % opt['train_interval'])
         train_time.reset()
         for _ in range(opt['train_interval']):
             train_world.parley()
-        logger.info('[ Done. Time = %.2f (s) ]' % train_time.time())
+        #logger.info('[ Done. Time = %.2f (s) ]' % train_time.time())
+
 
         # ...validate!
+        print('start validation')
         valid_metric = validate(opt, doc_reader, iteration)
         if valid_metric > best_valid:
             logger.info(
@@ -143,7 +230,7 @@ if __name__ == '__main__':
         help='Validate after every N train updates',
     )
     argparser.add_arg(
-        '--patience', type=int, default=10,
+        '--patience', type=int, default=16,
         help='Number of intervals to continue without improvement'
     )
     SimpleDictionaryAgent.add_cmdline_args(argparser)

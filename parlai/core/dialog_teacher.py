@@ -5,6 +5,8 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 from .agents import Teacher
+from .thread_utils import SharedTable
+from .metrics import Metrics
 
 from PIL import Image
 import random
@@ -12,26 +14,31 @@ import os
 import sys
 import time
 
+import pdb
+
+from nltk.tokenize import sent_tokenize
+
+import numpy as np
 
 class DialogTeacher(Teacher):
     """A base teacher class for doing dialog with fixed chat logs.
-
     This class provides a set a basic functionality:
-
     - uses data class to store and query text data
     - generates action tables to send to the student agent from the data
     - metrics tracking count of sent vs correctly answered queries
 
-    If you have ``opt.numthreads > 1``, this also activates a shared memory
+    If you have opt.numthreads > 1, this also activates a shared memory
     array for the data and lock-protected shared-memory metrics.
 
-    In order to subclass this class, you must implement ``setup_data()`` in your
-    class (or subclass another class which does, like ``FbDialogTeacher``), which
-    reads your data file as an iterator.
+    In order to subclass this class, you must implement setup_data() in your
+    class (or subclass another class which does, like FbDialogTeacher), which
+    reads your data file as an iterator. See the data module for a description
+    of the requirements for setup_data().
     """
 
     def __init__(self, opt, shared=None):
         # Check for setup_data
+        print("[DialogTeacher initializing.]")
         if not hasattr(self, 'setup_data'):
             raise RuntimeError('Must implement setup_data or subclass a class' +
                                ' which implements it (e.g. FbDialogTeacher)' +
@@ -50,6 +57,7 @@ class DialogTeacher(Teacher):
             self.data = DialogData(opt, self.setup_data(opt['datafile']),
                                    cands=self.label_candidates())
 
+        #pdb.set_trace()
         # for ordered data in batch mode (especially, for validation and
         # testing), each teacher in the batch gets a start index and a step
         # size so they all process disparate sets of the data
@@ -64,11 +72,8 @@ class DialogTeacher(Teacher):
         self.metrics.clear()
         self.lastY = None
         self.episode_idx = self.data_offset - self.step_size
-        self.episode_done = True
         self.epochDone = False
-        if not self.random and self.data_offset >= self.data.num_episodes():
-            # could have bigger batchsize then episodes... so nothing to do
-            self.epochDone = True
+        self.episode_done = True
 
     def __len__(self):
         return len(self.data)
@@ -81,21 +86,22 @@ class DialogTeacher(Teacher):
         if self.epochDone:
             raise StopIteration()
 
+    # share datatype, data, metrics, and a lock on the metrics
     def share(self):
         shared = super().share()
         shared['data'] = self.data
         return shared
 
     def label_candidates(self):
-        """Returns ``None`` by default, but override this in children (such as
-        ``FbDialogTeacher``) to load up candidate labels for every example.
+        """Returns None by default, but override this in children (such as
+        FbDialogTeacher) to load up candidate labels for every example.
         """
         return None
 
     def observe(self, observation):
         """Process observation for metrics. """
         if self.lastY is not None:
-            self.metrics.update(observation, self.lastY)
+            loss = self.metrics.update(observation, self.lastY)
             self.lastY = None
         return observation
 
@@ -121,16 +127,58 @@ class DialogTeacher(Teacher):
             # this is used for ordered data to check whether there's more data
             epoch_done = True
 
+        #pdb.set_trace()
+
         return action, epoch_done
 
     def act(self):
         """Send new dialog message."""
         if self.epochDone:
-            return {'episode_done': True}
+            return { 'episode_done': True }
         action, self.epochDone = self.next_example()
         self.episode_done = action['episode_done']
         action['id'] = self.getID()
         self.lastY = action.get('labels', None)
+
+        paragraph_tokenize_list = sent_tokenize(action['text'])
+        nSent = len(paragraph_tokenize_list)-1 # exclude question
+
+        if self.opt['ans_sent_predict']:
+            # Sentence boundary
+            sent_end_idx_word = []
+            sent_end_idx_char = []
+            offset_word=-1  #offset_word = 0 (make sure index is 0-based)
+            offset_char=-1  #offset_char = 0 (make sure index is 0-based)
+            for sIdx in range(nSent):
+                nWord = len(paragraph_tokenize_list[sIdx].split())
+                sent_end_idx_word.append(nWord + offset_word)
+                offset_word += nWord
+
+                nChar = len(paragraph_tokenize_list[sIdx])
+                sent_end_idx_char.append(nChar + offset_char)
+                offset_char += nChar
+
+            if nSent == 0:
+                sent_end_idx_word.append(-100) # indicate 1) single sentence OR 2) sentence tokenize error
+                sent_end_idx_char.append(-100) # indicate 1) single sentence OR 2) sentence tokenize error
+            action['sent_end_idx_word'] = sent_end_idx_word
+            #action['sent_end_idx_char'] = sent_end_idx_char
+
+            # Answer Sentence Label
+            #pdb.set_trace()
+            diff_idx = np.asarray(sent_end_idx_char - np.asarray(action['reward'][0]))
+            answer_sent = np.where(diff_idx >= 0)
+
+            if len(answer_sent[0]) > 0:
+                answer_sent = answer_sent[0][0]
+            else:
+                answer_sent = 0
+
+            action['answer_sent'] = answer_sent  # 0-based index
+
+
+
+
         if not self.datatype.startswith('train'):
             action.pop('labels', None)
         return action
@@ -147,32 +195,28 @@ class DialogData(object):
     supervised labels, candidate labels and rewards.
 
     All these are stored in this internal data format which is used by the
-    ``DialogTeacher`` class.
+    DialogTeacher class.
 
-    ``data_loader`` is an iterable, with each call returning:
+    data_loader is an iterable, with each call returning:
 
-        ``(x, ...), new_episode?``
+    (x, ...), new_episode?
 
-        Where
-
-        - ``x`` is a query and possibly context
-
-        ``...`` can contain additional fields, specifically
-
-        - ``y`` is an iterable of label(s) for that query
-        - ``r`` is the str reward for getting that query correct
-        - ``c`` is an iterable of label candidates that the student can choose from
-        - ``i`` is a str path to an image on disk, which will be loaded by the data
+    Where...
+    - x is a query and possibly context
+    ... can contain additional fields, specifically
+      - y is an iterable of label(s) for that query
+      - r is the str reward for getting that query correct
+      - c is an iterable of label candidates that the student can choose from
+      - i is a str path to an image on disk, which will be loaded by the data
           class at request-time. should always point to the raw image file.
-        - ``new_episode?`` is a boolean value specifying whether that example is the start of a new episode. If you don't use episodes set this to ``True`` every time.
+    - new_episode? is a boolean value specifying whether that example is the start
+    of a new episode. If you don't use episodes set this to True every time.
 
+    cands can be set to provide a list of candidate labels for every example
+        in this dataset, which the agent can choose from (the correct answer
+        should be in this set).
 
-    ``cands`` can be set to provide a list of candidate labels for every example
-    in this dataset, which the agent can choose from (the correct answer
-    should be in this set).
-
-
-    ``random`` tells the data class whether or not to visit episodes sequentially
+    random tells the data class whether or not to visit episodes sequentially
     or randomly when returning examples to the caller.
     """
 
@@ -190,7 +234,10 @@ class DialogData(object):
         """Returns total number of entries available. Each episode has at least
         one entry, but might have many more.
         """
-        return sum(len(episode) for episode in self.data)
+        length = 0
+        for l in self.data:
+            length += len(l)
+        return length
 
     def _load(self, data_loader):
         """Loads up data from an iterator over tuples described in the class
@@ -220,8 +267,12 @@ class DialogData(object):
                         new_entry.append(None)
                     if len(entry) > 2:
                         # process reward if available
+                        #pdb.set_trace()
                         if entry[2] is not None:
-                            new_entry.append(sys.intern(entry[2]))
+                            if self.opt['ans_sent_predict']:
+                                new_entry.append(entry[2]) # sentence prediction
+                            else:
+                                new_entry.append(sys.intern(entry[2]))
                         else:
                             new_entry.append(None)
                         if len(entry) > 3:
@@ -234,14 +285,15 @@ class DialogData(object):
                                         sys.intern('same as last time'))
                                 else:
                                     last_cands = entry[3]
-                                    new_entry.append(tuple(
-                                        sys.intern(e) for e in entry[3]))
+                                    new_entry.append(tuple(sys.intern(e) for e in entry[3]))
                             else:
                                 new_entry.append(None)
                             if len(entry) > 4 and entry[4] is not None:
                                 new_entry.append(sys.intern(entry[4]))
 
             episode.append(tuple(new_entry))
+
+            #pdb.set_trace()
 
         if len(episode) > 0:
             self.data.append(tuple(episode))
@@ -260,24 +312,19 @@ class DialogData(object):
 
         # now pack it in a action-observation dictionary
         table = {}
-        if entry[0] is not None:
-            table['text'] = entry[0]
+        table['text'] = entry[0]
         if len(entry) > 1:
-            if entry[1] is not None:
-                table['labels'] = entry[1]
+            table['labels'] = entry[1]
             if len(entry) > 2:
-                if entry[2] is not None:
-                    table['reward'] = entry[2]
+                table['reward'] = entry[2]
                 if len(entry) > 3:
-                    if entry[3] is not None:
-                        table['label_candidates'] = entry[3]
-                    if len(entry) > 4 and entry[4] is not None:
-                        img = load_image(self.opt, entry[4])
-                        if img is not None:
-                            table['image'] = img
+                    table['label_candidates'] = entry[3]
+                    if len(entry) > 4 and not self.opt.get('no_images', False):
+                        table['image'] = load_image(self.opt, entry[4])
+
 
         if (table.get('labels', None) is not None
-                and self.cands is not None):
+            and self.cands is not None):
             if self.addedCands:
                 # remove elements in addedCands
                 self.cands.difference_update(self.addedCands)
@@ -289,50 +336,28 @@ class DialogData(object):
                     self.addedCands.append(label)
             table['label_candidates'] = self.cands
 
-        if 'labels' in table and 'label_candidates' in table:
-            if table['labels'][0] not in table['label_candidates']:
-                raise RuntimeError('true label missing from candidate labels')
+        #pdb.set_trace()
+        if not self.opt['ans_sent_predict']:
+            if 'labels' in table and 'label_candidates' in table:
+                if table['labels'][0] not in table['label_candidates']:
+                    raise RuntimeError('true label missing from candidate labels')
 
         # last entry in this episode
         table['episode_done'] = episode_done
         return table, end_of_data
 
-
-_greyscale = '  .,:;crsA23hHG#98&@'
-
-
-def img_to_ascii(path):
-    im = Image.open(path)
-    im.thumbnail((60, 40), Image.BICUBIC)
-    im = im.convert('L')
-    asc = []
-    for y in range(0, im.size[1]):
-        for x in range(0, im.size[0]):
-            lum = 255 - im.getpixel((x, y))
-            asc.append(_greyscale[lum * len(_greyscale) // 256])
-        asc.append('\n')
-    return ''.join(asc)
-
-
 def load_image(opt, path):
-    mode = opt.get('image_mode', 'raw')
-    if mode is None or mode == 'none':
-        # don't need to load images
+    if opt.get('no_images', False) or not path:
         return None
-    elif mode == 'raw':
-        # raw just returns RGB values
-        return Image.open(path).convert('RGB')
-    elif mode == 'ascii':
-        # convert images to ascii ¯\_(ツ)_/¯
-        return img_to_ascii(path)
-    else:
-        # otherwise, looks for preprocessed version under 'mode' directory
+    mode = opt.get('image_preprocessor', 'raw')
+    if mode != 'raw':
         prepath, imagefn = os.path.split(path)
         new_path = os.path.join(prepath, mode, imagefn)
         if not os.path.isfile(new_path):
-            # currently only supports *downloaded* preprocessing
-            # TODO: generate preprocessed images if not available
             raise NotImplementedError('image preprocessing mode' +
                                       '{} not supported yet'.format(mode))
         else:
             return Image.open(path)
+    else:
+        # return the image
+        return Image.open(path).convert('RGB')
