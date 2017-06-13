@@ -87,7 +87,7 @@ class DocReaderModel(object):
         # Transfer to GPU
         if self.opt['cuda']:
             inputs = [Variable(e.cuda(async=True)) for e in ex[:5]]
-            inputs += [ex[5:7]]  # Add targets to inputs for training pointer network
+            inputs += [[e[0] for e in ex[5:7]]]  # Add targets to inputs for training pointer network
             target_s = Variable(ex[5].cuda(async=True))
             target_e = Variable(ex[6].cuda(async=True))
         else:
