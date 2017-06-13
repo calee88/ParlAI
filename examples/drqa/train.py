@@ -191,14 +191,13 @@ def main(opt):
     logger.info("[ Ok, let's go... ]")
     iteration = 0
     while impatience < opt['patience']:
-
+        
         # Train...
         logger.info('[ Training for %d iters... ]' % opt['train_interval'])
         train_time.reset()
         for _ in range(opt['train_interval']):
             train_world.parley()
         #logger.info('[ Done. Time = %.2f (s) ]' % train_time.time())
-
 
         # ...validate!
         print('start validation')
@@ -217,9 +216,20 @@ def main(opt):
                 logger.info('[ Task solved! Stopping. ]')
                 break
         else:
-            impatience += 1
+            if opt['lrate_decay']:
+                # doc_reader.model.opt['learning_rate'] *= 0.5
+                opt['learning_rate'] *= 0.5
+                doc_reader.model.set_lrate(opt['learning_rate'])
+                logger.info('[ Decrease learning_rate %.2e]' % opt['learning_rate'] )
+                lrate_decay +=1
+                if lrate_decay > 10:
+                    break
+            else:                
+                impatience += 1
+                logger.info('[ Increase impatience %d ]' % impatience)
 
         iteration += 1
+    logger.info('[ >> Best eval : %s = %.4f ]' % (opt['valid_metric'], best_valid))
 
 
 if __name__ == '__main__':

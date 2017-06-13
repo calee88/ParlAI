@@ -102,6 +102,7 @@ class DialogTeacher(Teacher):
         """Process observation for metrics. """
         if self.lastY is not None:
             loss = self.metrics.update(observation, self.lastY)
+            self.lastY_prev = self.lastY
             self.lastY = None
         return observation
 

@@ -74,7 +74,10 @@ class DocReaderModel(object):
                                           weight_decay=opt['weight_decay'])
         else:
             raise RuntimeError('Unsupported optimizer: %s' % opt['optimizer'])
-
+        
+    def set_lrate(self, lrate):
+        self.optimizer.param_groups[0]['lr']=lrate      
+        
     def set_embeddings(self):
         # Read word embeddings.
         if 'embedding_file' not in self.opt:

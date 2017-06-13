@@ -36,10 +36,8 @@ def main(opt):
         logger.info('TDNN embedding dim = %d' % (opt['embedding_dim_TDNN']))
 
     #Write prediction file
-    #f_predict = open(("exp-squad/" + str(opt['expnum']) + '.prediction'),"w")
-    f_predict = open((str(opt['model_file']) + '.prediction'),"w")
+    f_predict = open(("exp-squad/" + str(opt['expnum']) + '.prediction'),"w")
     f_predict.write("{")
-    f_analysis = open((str(opt['model_file']) + '.analysis'),"w")
 
     # Load document reader
     doc_reader = DocReaderAgent(opt)
@@ -59,23 +57,13 @@ def main(opt):
     if opt['ans_sent_predict']:
         valid_world.agents[1].model.input_idx_bdy -= 1
 
-    nExample = 0
-    f1_avg_prev = 0
-    acc_avg_prev = 0
     for _ in valid_world:
         valid_world.parley()
-        nExample+=1
-        #pdb.set_trace()
-        f_predict.write('"' + valid_world.acts[0]['reward'] + '" ')
-        f_predict.write('"' + valid_world.acts[1]['text'] + '", ')
-        f_analysis.write('Paragraph & Question = ' + valid_world.acts[0]['text'] + '\n')
-        f_analysis.write('Prediction = ' + valid_world.acts[1]['text'] + '\n')
-        f_analysis.write('Answer = ' + valid_world.agents[0].lastY_prev[0] + '\n')
 
-        f1_avg_cur = valid_world.agents[0].report()['f1']
-        f1_cur = nExample*f1_avg_cur - (nExample-1)*f1_avg_prev
-        f_analysis.write('F1 = ' + str(f1_cur) + '\n')
-        f1_avg_prev = f1_avg_cur
+        #pdb.set_trace()
+        #f_predict.write('"' + valid_world.acts[0]['reward'] + '" ')
+        #f_predict.write('"' + valid_world.acts[1]['text'] + '", ')
+
 
     #pdb.set_trace()
     metrics = valid_world.report()
@@ -94,7 +82,7 @@ def main(opt):
     # Close prediction file
     f_predict.write("}")
     f_predict.close()
-    f_analysis.close()
+
 
 if __name__ == '__main__':
     # Get command line arguments

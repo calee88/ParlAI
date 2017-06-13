@@ -165,11 +165,11 @@ class RnnDocReader(nn.Module):
         # Bilinear attention for span start/end
         if opt['task_QA']:
             self.start_attn = layers.BilinearSeqAttn(
-                doc_hidden_size,
+                pp_matched_size,
                 question_hidden_size
                 )
             self.end_attn = layers.BilinearSeqAttn(
-                doc_hidden_size,
+                pp_matched_size,
                 question_hidden_size
                 )
                            
@@ -185,7 +185,7 @@ class RnnDocReader(nn.Module):
                 padding=opt['rnn_padding_sent'],
             )
             self.sentseqAttn = layers.BilinearSeqAttn(
-                pp_matched_size
+                opt['hidden_size_sent'],
                 question_hidden_size,
                 )
             #print('DEBUG (no hRNN)')
@@ -197,7 +197,7 @@ class RnnDocReader(nn.Module):
     #def forward(self, x1, x1_f, x1_mask, x2, x2_mask, x1_c=None, x2_c=None):  # for this version, we do not utilize mask for char
     def forward(self, x1, x1_f, x1_mask, x2, x2_mask, x1_c=None, x2_c=None, x1_sent_mask=None, word_boundary=None):  # for this version, we do not utilize mask for char
 
-        pdb.set_trace()
+        #pdb.set_trace()
 
         """Inputs:
         x1 = document word indices             [batch * len_d]
@@ -252,7 +252,8 @@ class RnnDocReader(nn.Module):
                 x2_emb = self.Highway(x2_emb.view(-1, embed_size))
                 x2_emb = x2_emb.view(batch_size, -1, embed_size)
         else:
-            if (x1_c and x2_c):
+            if (('x1_c' in locals()) and ('x2_c' in locals())):
+                #pdb.set_trace()
                 x1_sent_mask = x1_c
                 word_boundary = x2_c
 
@@ -284,8 +285,8 @@ class RnnDocReader(nn.Module):
             qp_matched_doc = qp_matched_doc.contiguous()
             
         pp_matched_doc = self.pp_match(qp_matched_doc, x1_mask, qp_matched_doc, x1_mask)
-        print(pp_matched_doc.size())
-        pdb.set_trace()
+        #print(pp_matched_doc.size())
+        #pdb.set_trace()
         
         # Merge question hiddens
         if self.opt['question_merge'] == 'avg':

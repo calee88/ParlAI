@@ -164,7 +164,7 @@ class RnnDocReader(nn.Module):
                 padding=opt['rnn_padding_sent'],
             )
             self.sentseqAttn = layers.BilinearSeqAttn(
-                qp_matched_size,
+                opt['hidden_size_sent']*2,
                 question_hidden_size
                 )
             #print('DEBUG (no hRNN)')
@@ -231,7 +231,8 @@ class RnnDocReader(nn.Module):
                 x2_emb = self.Highway(x2_emb.view(-1, embed_size))
                 x2_emb = x2_emb.view(batch_size, -1, embed_size)
         else:
-            if (x1_c and x2_c):
+            if (('x1_c' in locals()) and ('x2_c' in locals())):
+                #pdb.set_trace()
                 x1_sent_mask = x1_c
                 word_boundary = x2_c
 

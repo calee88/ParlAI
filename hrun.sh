@@ -81,21 +81,30 @@ case "$exp" in
 		######
 		######
 		###### PP matching
-	h14-fix) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True
+	h14-fix) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24
 		;;
-	h14-fix-bi) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_birnn True
+	h14-fix-2) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24
 		;;
-	h14-fix-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_concat True --pp_concat True
+	h14-fix-bi) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --hidden_size 64 --rnn_type gru -bs 24
 		;;
-	h14-fix-bi-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --qp_concat True --pp_birnn True --pp_concat True
-		;;
+#	h14-fix-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_concat True --pp_concat True
+#		;;
+#	h14-fix-bi-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --qp_concat True --pp_birnn True --pp_concat True
+#		;;
 		######
 		######
 		###### Char + QP matching
-	h15-fix-bi-ldecay-44) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --gpu $gpuid --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1  
+	h15-fix-bi-ldecay-44) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --tune_partial 0 --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 -bs 20 
 	;;
+	h15-fix-bi-ldecay-44-2) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --tune_partial 0 --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 -bs 20 
+	;;
+	h15-fix-bi-ldecay-49) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --ans_sent_predict True --hidden_size_sent 256 --coeff_ans_predict 0.1  
+	;;
+	h15-fix-bi-ldecay-50) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --ans_sent_predict True --hidden_size_sent 256 --coeff_ans_predict 0.01
+	;;
+
+
+
 	debug) python $script -t squad --model_file $exp_dir/exp$exp --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --tune_partial 1000   ## r-net For debug
-	;;
-	h15-fix-bi-ldecay-44-debug) python $script -t squad --model_file $exp_dir/exp$exp --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --gpu $gpuid --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1
 esac
 
