@@ -88,7 +88,7 @@ class RnnDocReader(nn.Module):
         if opt['question_merge'] == 'self_attn':
             self.self_attn = LinearTanhSeqAttn(question_hidden_size, question_hidden_size)
 
-        self.ptrnet = PointerNetwork(doc_hidden_size, doc_hidden_size, 1, opt['batchsize'], decoder_length=2)
+        self.ptrnet = PointerNetwork(doc_hidden_size, doc_hidden_size, 1, decoder_length=2)
 
         # # Bilinear attention for span start/end
         # self.start_attn = layers.BilinearSeqAttn(
@@ -138,7 +138,8 @@ class RnnDocReader(nn.Module):
         question_hidden = layers.weighted_avg(question_hiddens, q_merge_weights)
 
         # Create decoder_inputs based on doc_hiddens
-        decoder_inputs = [doc_hiddens[:, i, :] for i in decoder_inputs]
+        if decoder_inputs is not None:
+            decoder_inputs = [doc_hiddens[:, i, :] for i in decoder_inputs]
 
         # Predict start and end positions
         scores = self.ptrnet(doc_hiddens.transpose(0, 1), decoder_inputs, question_hidden, x1_mask)
