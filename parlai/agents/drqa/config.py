@@ -112,7 +112,7 @@ def add_cmdline_args(parser):
                         help='Weight decay (default 0)')
     parser.add_argument('--momentum', type=float, default=0,
                         help='Momentum (default 0)')
-    parser.add_argument('--lrate_decay', type=bool, default=False,
+    parser.add_argument('--lrate_decay', type=bool, default=True,
                         help='-----')
     
     # Model-specific

@@ -187,6 +187,7 @@ def main(opt):
     # Keep track of best model + how long since the last improvement
     best_valid = 0
     impatience = 0
+    lrate_decay = 0
 
     logger.info("[ Ok, let's go... ]")
     iteration = 0
