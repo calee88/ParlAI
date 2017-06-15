@@ -68,11 +68,13 @@ case "$exp" in
 		;;
 	h13-fix-bi) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True  ## r-net, GatedAttentionRNN
 		;;
-	h13-fix-bi-ldecay) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True # --train_interval 3368
+	h13-fix-bi-ldecay) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
 		;;
-	h13-fix-bi-ldecay-gru) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --rnn_type gru
+	h13-fix-bi-ldecay-pad) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --rnn_padding True
 		;;
-	h13-fix-bi-ldecay-gru2) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.2 --dropout_emb 0 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --rnn_type gru
+	h13-fix-bi-ldecay-gru) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --rnn_type gru ## OOM
+		;;
+	h13-fix-bi-ldecay-gru2) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.2 --dropout_emb 0 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --rnn_type gru  ## OOM
 		;;
 	h13-fix-bi-ldecay-adam) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --learning_rate 0.0005 --optimizer adam # --train_interval 3368
 		;;
@@ -85,17 +87,17 @@ case "$exp" in
 		######
 		######
 		###### PP matching
-	h14-fix) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24 --rnn_type gru
+	h14-fix) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24 --rnn_type gru ## QP -> UNI PP -> UNI
 		;;
 	h14-fix-2) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24
-		;;
-	h14-fix-bi) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --hidden_size 64 --rnn_type gru -bs 24
 		;;
 	h14-fix-lr) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24 --rnn_type gru
 		;;
 	h14-fix-2-lr) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24
 		;;
-
+	h14-fix-bi) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --hidden_size 64 --rnn_type gru -bs 24  ## QP -> BI , PP -> UNI
+		;;
+	
 	#	h14-fix-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_concat True --pp_concat True
 #		;;
 #	h14-fix-bi-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --qp_concat True --pp_birnn True --pp_concat True

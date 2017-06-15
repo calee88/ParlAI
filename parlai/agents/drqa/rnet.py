@@ -141,7 +141,8 @@ class RnnDocReader(nn.Module):
         if opt['qp_concat']:
             qp_matched_size = qp_matched_size + doc_hidden_size        
  
-         ## PP matching: 
+        ## PP matching: 
+                
         opt['pp_rnn_size'] = qp_matched_size * 2
         if opt['pp_bottleneck']:
             opt['pp_rnn_size'] = opt['hidden_size']

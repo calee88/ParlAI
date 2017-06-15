@@ -73,6 +73,8 @@ def add_cmdline_args(parser):
     parser.add_argument('--qp_concat', type='bool', default=False,
                         help='----')
     parser.add_argument('--pp_bottleneck', type='bool', default=True,
+                        help='-----')
+    parser.add_argument('--pp_rnn_size', type=int, default=75,
                         help='---')
     parser.add_argument('--pp_birnn', type='bool', default=False,
                         help='----')
