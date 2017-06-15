@@ -66,8 +66,9 @@ def main(opt):
         valid_world.parley()
         nExample+=1
         #pdb.set_trace()
-        f_predict.write('"' + valid_world.acts[0]['reward'] + '" ')
-        f_predict.write('"' + valid_world.acts[1]['text'] + '", ')
+        f_predict.write('"' + valid_world.acts[0]['reward'] + '": ')
+        temp_valid_word = valid_world.acts[1]['text'].replace("\"", "\\\"")
+        f_predict.write('"' + temp_valid_word + '", ')
         f_analysis.write('Paragraph & Question = ' + valid_world.acts[0]['text'] + '\n')
         f_analysis.write('Prediction = ' + valid_world.acts[1]['text'] + '\n')
         f_analysis.write('Answer = ' + valid_world.agents[0].lastY_prev[0] + '\n')
