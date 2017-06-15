@@ -64,7 +64,7 @@ def main(opt):
     acc_avg_prev = 0
     for _ in valid_world:
         valid_world.parley()
-        if(nExample > 0)
+        if nExample > 0:
             f_predict.write(", ")
         nExample+=1
         #pdb.set_trace()
