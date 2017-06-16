@@ -83,7 +83,7 @@ class ParlaiParser(object):
                  'defaults to {parlai_dir}/downloads')
         self.parser.add_argument(
             '-dt', '--datatype', default='train',
-            choices=['train', 'train:ordered', 'valid', 'test'],
+#           choices=['train', 'train:ordered', 'valid', 'test'],
             help='choose from: train, train:ordered, valid, test. ' +
                  'by default: train is random with replacement, ' +
                  'valid is ordered, test is ordered.')

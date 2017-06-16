@@ -22,7 +22,7 @@ from parlai.core.worlds import create_task
 def main(opt, outputpath):
     # Check options
     assert('pretrained_model' in opt)
-    assert(opt['datatype'] in {'test', 'valid'})
+ #   assert(opt['datatype'] in {'test', 'valid'})
 
     # Calculate TDNN embedding dim (after applying TDNN to char tensor)
     opt['kernels'] = ''.join(opt['kernels'])
@@ -79,7 +79,7 @@ def main(opt, outputpath):
 if __name__ == '__main__':
     # Get command line arguments
     path = "evasquard" + sys.argv[1]
-    defopt = "--pretrained_model exp_squard/exph13-fix-bi-ldecay -t squard --embedding_file /data3/calee/git/convai/ParlAI/data/glove.840B.300d.txt --dropout_rnn 0.3 --dropout_emb 0.3 --gpu 0 --qp_bottleneck True --qp_birnn True --lrate_decay True --model_file exp_squard/exph13-fix-bi-ldecay --datatype " + path
+    defopt = ['--pretrained_model', 'exp_squard/exph13-fix-bi-ldecay', '-t', 'squad', '--embedding_file', '/data3/calee/git/convai/ParlAI/data/glove.840B.300d.txt', '--dropout_rnn', '0.3', '--dropout_emb', '0.3', '--gpu', '0', '--qp_bottleneck', 'True', '--qp_birnn', 'True', '--lrate_decay', 'True', '--model_file', 'exp_squard/exph13-fix-bi-ldecay', '--datatype', path]
     argparser = ParlaiParser()
     DocReaderAgent.add_cmdline_args(argparser)
     opt = argparser.parse_args(defopt)
