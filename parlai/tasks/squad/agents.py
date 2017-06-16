@@ -29,6 +29,10 @@ class HandwrittenTeacher(Teacher):
         else:
             suffix = 'dev'
         datapath = os.path.join(opt['datapath'], 'SQuAD', suffix + '-v1.1.json')
+
+        if opt['datatype'].startswith('evasquad'):
+            datapath = opt['datatype'].replace('evasquad', "")
+
         self.data = self._setup_data(datapath)
         self.episode_idx = -1
         super().__init__(opt, shared)
