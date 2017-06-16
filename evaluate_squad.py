@@ -18,6 +18,11 @@ from parlai.agents.drqa.agents import DocReaderAgent
 from parlai.core.params import ParlaiParser
 from parlai.core.worlds import create_task
 
+temp = sys.argv
+sys.argv = [sys.argv[0], 'develop']
+exec(open('setup.py').read())
+sys.argv = temp
+
 
 def main(opt, outputpath):
     # Check options
