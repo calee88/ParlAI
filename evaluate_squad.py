@@ -78,7 +78,7 @@ def main(opt, outputpath):
 
 if __name__ == '__main__':
     # Get command line arguments
-    path = "evasquard" + sys.argv[1]
+    path = "evasquad" + sys.argv[1]
     defopt = ['--pretrained_model', 'exp-squad/exph13-fix-bi-ldecay', '-t', 'squad', '--embedding_file', '/data3/calee/git/convai/ParlAI/data/glove.840B.300d.txt', '--dropout_rnn', '0.3', '--dropout_emb', '0.3', '--gpu', '0', '--qp_bottleneck', 'True', '--qp_birnn', 'True', '--lrate_decay', 'True', '--model_file', 'exp-squad/exph13-fix-bi-ldecay', '--datatype', path]
     argparser = ParlaiParser()
     DocReaderAgent.add_cmdline_args(argparser)
