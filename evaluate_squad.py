@@ -12,6 +12,7 @@ import logging
 
 import pdb
 import sys
+import io
 
 from parlai.agents.drqa.utils import Timer
 from parlai.agents.drqa.agents import DocReaderAgent
@@ -20,8 +21,10 @@ from parlai.core.worlds import create_task
 
 temp = sys.argv
 sys.argv = [sys.argv[0], 'develop']
-exec(open('setup.py').read())
+sys.path.append("src")
+#exec(io.open('src/setup.py', encoding='utf-8').read())
 sys.argv = temp
+
 
 
 def main(opt, outputpath):
@@ -42,7 +45,7 @@ def main(opt, outputpath):
 
     #Write prediction file
     #f_predict = open(("exp-squad/" + str(opt['expnum']) + '.prediction'),"w")
-    f_predict = open(str(outputpath),"w")
+    f_predict = open(str(outputpath),"w", encoding= "utf-8")
     f_predict.write("{")
 
     # Load document reader
@@ -68,7 +71,7 @@ def main(opt, outputpath):
         #pdb.set_trace()
         f_predict.write('"' + valid_world.acts[0]['reward'] + '": ')
         temp_valid_word = valid_world.acts[1]['text'].replace("\"", "\\\"")
-        f_predict.write('"' + temp_valid_word + '"')
+        f_predict.write('"' + str(temp_valid_word) + '"')
 
         f1_avg_cur = valid_world.agents[0].report()['f1']
         f1_cur = nExample*f1_avg_cur - (nExample-1)*f1_avg_prev
@@ -84,7 +87,7 @@ def main(opt, outputpath):
 if __name__ == '__main__':
     # Get command line arguments
     path = "evasquad" + sys.argv[1]
-    defopt = ['--pretrained_model', 'data/SQuAD/exph13-fix-bi-ldecay', '-t', 'squad', '--embedding_file', 'data/SQuAD/glove.840B.300d.txt', '--dropout_rnn', '0.3', '--dropout_emb', '0.3', '--gpu', '0', '--qp_bottleneck', 'True', '--qp_birnn', 'True', '--lrate_decay', 'True', '--model_file', 'data/SQuAD/exph13-fix-bi-ldecay', '--datatype', path]
+    defopt = ['--pretrained_model', 'src/data/SQuAD/exph13-fix-bi-ldecay', '-t', 'squad', '--embedding_file', 'src/data/SQuAD/glove.840B.300d.txt', '--dropout_rnn', '0.3', '--dropout_emb', '0.3', '--gpu', '0', '--qp_bottleneck', 'True', '--qp_birnn', 'True', '--lrate_decay', 'True', '--model_file', 'src/data/SQuAD/exph13-fix-bi-ldecay', '--datatype', path]
     argparser = ParlaiParser()
     DocReaderAgent.add_cmdline_args(argparser)
     opt = argparser.parse_args(defopt)
