@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 from . import layers
 
+import sys
+from os import path
 sys.path.append(path.abspath('../../../ptrnet/src'))
 from pointer import LinearTanhSeqAttn
 
