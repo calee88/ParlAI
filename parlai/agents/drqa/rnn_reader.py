@@ -120,8 +120,10 @@ class RnnDocReader(nn.Module):
         # Question merging
         if opt['question_merge'] not in ['avg', 'self_attn']:
             raise NotImplementedError('merge_mode = %s' % opt['merge_mode'])
-        if opt['question_merge'] == 'self_attn':
+        if opt['question_merge'] == 'tanh':
             self.self_attn = LinearTanhSeqAttn(question_hidden_size, question_hidden_size)
+        elif opt['question_merge'] == 'self_attn':
+            self.self_attn = layers.LinearSeqAttn(question_hidden_size)
 
         # Bilinear attention for span start/end
         if opt['task_QA']:
@@ -235,7 +237,7 @@ class RnnDocReader(nn.Module):
         question_hiddens = self.question_rnn(x2_emb, x2_mask)
         if self.opt['question_merge'] == 'avg':
             q_merge_weights = layers.uniform_weights(question_hiddens, x2_mask)
-        elif self.opt['question_merge'] == 'self_attn':
+        else:
             q_merge_weights = self.self_attn(question_hiddens, x2_mask)
         question_hidden = layers.weighted_avg(question_hiddens, q_merge_weights)
 

@@ -119,8 +119,8 @@ def add_cmdline_args(parser):
     
     # Model-specific
     parser.add_argument('--concat_rnn_layers', type='bool', default=True)
-    parser.add_argument('--question_merge', type=str, default='self_attn',
-                        help='The way of computing question representation')
+    parser.add_argument('--question_merge', type=str, choices=['self_attn', 'tanh', 'avg'],
+                        default='tanh', help='The way of computing question representation')
     parser.add_argument('--use_qemb', type='bool', default=True,
                         help='Whether to use weighted question embeddings')
     parser.add_argument('--use_in_question', type='bool', default=True,
