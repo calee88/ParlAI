@@ -15,7 +15,6 @@ class LocalHumanAgent(Agent):
     def __init__(self, opt, shared=None):
         super().__init__(opt)
         self.id = 'localHuman'
-        self.episodeDone = False
 
     def observe(self, msg):
         print(display_messages([msg]))
@@ -24,13 +23,5 @@ class LocalHumanAgent(Agent):
         obs = self.observation
         reply = {}
         reply['id'] = self.getID()
-        reply_text = input("Enter Your Reply: ")
-        if '[DONE]' in reply_text:
-            reply['episode_done'] = True
-            self.episodeDone = True
-            reply_text = reply_text.replace('[DONE]', '')
-        reply['text'] = reply_text
+        reply['text'] = input("Enter Your Reply: ")
         return reply
-
-    def episode_done(self):
-        return self.episodeDone

@@ -3,38 +3,32 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
-"""This module provides a set of basic agents:
+"""Provides a set of basic agents:
 
-    ``Agent(object)``
-    base class for all other agents, implements the ``observe()`` method 
-    which receives an observation/action dict and the ``act()`` method which
-    returns a dict in response.
+Agent(object): base class for all other agents, implements the observe() method
+    method  which receives an observation table and the act method which
+    returns a table in response
+Teacher(Agent): also implements the report method for returning metrics. Tasks
+    implement the Teacher class.
+MultiTaskTeacher(Teacher): creates a set of teachers based on a "task string"
+    passed to the Teacher, creating multiple teachers within it and alternating
+    between them
 
-    ``Teacher(Agent)``
-    also implements the ``report()`` method for returning metrics. All ParlAI tasks implement 
-    the ``Teacher`` class.
+Also provides a utility method (used by MultiTaskTeacher) for instantiating
+    teachers from a string, assuming they follow our naming conventions:
+create_task_agents(str): instantiate task-specific agents (e.g. a teacher)
+    from a given task string (e.g. 'babi:task1k:1' or 'squad')
 
-    ``MultiTaskTeacher(Teacher)``
-    creates a set of teachers based on a "task string" passed to the ``Teacher``, 
-    creating multiple teachers within it and alternating between them.
 
 All agents are initialized with the following parameters:
 
-    ``opt`` -- contains any options needed to set up the agent. This generally contains
-    all command-line arguments recognized from ``core.params``, as well as other
+opt -- contains any options needed to set up the agent. This generally contains
+    all command-line arguments recognized from core.params, as well as other
     options that might be set through the framework to enable certain modes.
-
-    ``shared`` (optional) -- if not ``None``, contains any shared data used to construct
+shared (optional) -- if not None, contains any shared data used to construct
     this particular instantiation of the agent. This data might have been
     initialized by another agent, so that different agents can share the same
     data (possibly in different Processes).
-
-This module also provides a utility method:
-
-    ``create_task_agents(str)``: instantiate task-specific agents (e.g. a teacher)
-    from a given task string (e.g. 'babi:task1k:1' or 'squad'). Used by 
-    ``MultiTaskTeacher``.
-
 """
 
 from .metrics import Metrics
@@ -44,7 +38,7 @@ import random
 
 
 class Agent(object):
-    """Base class for all other agents."""
+    """Basic agent which says hello."""
 
     def __init__(self, opt, shared=None):
         if not hasattr(self, 'id'):
@@ -54,12 +48,11 @@ class Agent(object):
         self.observation = None
 
     def observe(self, observation):
-        """Receive an observation/action dict."""
         self.observation = observation
         return observation
 
     def act(self):
-        """Return an observation/action dict based upon given observation."""
+        """Return state/action table based upon given observation."""
         if hasattr(self, 'observation') and self.observation is not None:
             print('agent received observation:')
             print(self.observation)
@@ -89,9 +82,47 @@ class Agent(object):
         """Perform any final cleanup if needed."""
         pass
 
+def create_agent(opt):
+    """Create an agent from the options model, model_params and model_file.
+    The input is either of the form "parlai.agents.ir_baseline.agents/IrBaselineAgent"
+    (i.e. the path followed by the class name) or else just 'IrBaseline' which
+    assumes the path above, and a class name suffixed with 'Agent'
+    """
+    dir_name = opt['model']
+    if ':' in dir_name:
+        s = dir_name.split(':')
+        module_name = s[0]
+        class_name = s[1]
+    else:
+        module_name = "parlai.agents.%s.agents" % (dir_name)
+        words = opt['model'].split('_')
+        class_name = ''
+        for w in words:
+            class_name += ( w[0].upper() + w[1:])
+        class_name += 'Agent'
+    print(class_name)
+    my_module = importlib.import_module(module_name)
+    model_class = getattr(my_module, class_name)
+    return model_class(opt)
+
+# Helper functions to create agent/agents given shared parameters
+# returned from agent.share(). Useful for parallelism, sharing params, etc.
+def create_agent_from_shared(shared_agent):
+    a = shared_agent['class'](shared_agent['opt'], shared_agent)
+    return a
+
+def create_agents_from_shared(shared):
+    # create agents based on shared data.
+    shared_agents = []
+    for shared_agent in shared:
+        agent = create_agent_from_shared(shared_agent)
+        shared_agents.append(agent)
+    return shared_agents
+
+
 class Teacher(Agent):
     """Basic Teacher agent which keeps track of how many times it's received
-    messages. Teachers provide the ``report()`` method to get back metrics."""
+    messages. Teachers provide the `report` method to get back metrics."""
 
     def __init__(self, opt, shared=None):
         if not hasattr(self, 'opt'):
@@ -113,7 +144,7 @@ class Teacher(Agent):
         return self
 
     def __next__(self):
-        """Raise ``StopIteration`` if epoch is done (never for default teacher)."""
+        """Raise StopIteration if epoch is done (never for default teacher)."""
         if self.epochDone:
             raise StopIteration()
 
@@ -138,165 +169,18 @@ class Teacher(Agent):
 
     def share(self):
         """If applicable, share any parameters needed to create a shared version
-        of this agent.
-        """
+        of this agent. """
         shared = super().share()
         shared['metrics'] = self.metrics
         return shared
 
-class MultiTaskTeacher(Teacher):
-    """Creates a teacher that is actually a set of teachers each based on
-    a task string--each of these teachers will get called in turn,
-    either randomly or in order.
-    They are all in the same world (they are the same agent switching tasks).
-
-    The task string format is described for the ``create_task_agents()`` function
-    above.
-    """
-
-    def __init__(self, opt, shared=None):
-        self.tasks = []
-        self.opt = opt
-        self.id = opt['task']
-        if shared and 'tasks' in shared:
-            self.tasks = [create_agent_from_shared(t) for t in shared['tasks']]
-        else:
-            tasks = opt['task'].split(',')
-            for k in tasks:
-                k = k.strip()
-                if k:
-                    opt_singletask = copy.deepcopy(opt)
-                    opt_singletask['task'] = k
-                    self.tasks.extend(create_task_agent_from_taskname(
-                        opt_singletask))
-        self.task_idx = -1
-        self.new_task = True
-        self.random = opt.get('datatype') == 'train'
-
-    def __len__(self):
-        if not hasattr(self, 'len'):
-            self.len = 0
-            # length is sum of all task lengths
-            for _ind, t in enumerate(self.tasks):
-                self.len += len(t)
-        return self.len
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.epoch_done():
-            raise StopIteration()
-
-    def observe(self, observation):
-        return self.tasks[self.task_idx].observe(observation)
-
-    def act(self):
-        if self.new_task:
-            self.new_task = False
-            if self.random:
-                # select random teacher
-                self.task_idx = random.randrange(len(self.tasks))
-            else:
-                # do at most one full loop looking for unfinished task
-                for _ in range(len(self.tasks)):
-                    self.task_idx = (self.task_idx + 1) % len(self.tasks)
-                    if not self.tasks[self.task_idx].epoch_done():
-                        # if this task has examples ready, break
-                        break
-                if self.tasks[self.task_idx].epoch_done():
-                    # all tasks are done, so return empty action table
-                    return {'episode_done': True}
-        t = self.tasks[self.task_idx].act()
-        if t['episode_done']:
-            self.new_task = True
-        return t
-
-    def epoch_done(self):
-        for t in self.tasks:
-            if not t.epoch_done():
-                return False
-        return True
-
-    # return transformed metrics showing total examples and accuracy if avail.
-    def report(self):
-        m = {}
-        m['tasks'] = {}
-        sum_accuracy = 0
-        num_tasks = 0
-        total = 0
-        for i in range(len(self.tasks)):
-            mt = self.tasks[i].report()
-            m['tasks'][self.tasks[i].getID()] = mt
-            total += mt['total']
-            if 'accuracy' in mt:
-                sum_accuracy += mt['accuracy']
-                num_tasks += 1
-        m['total'] = total
-        m['accuracy'] = 0
-        if num_tasks > 0:
-            m['accuracy'] = sum_accuracy / num_tasks
-        return m
-      
-    def reset(self):
-        for t in self.tasks:
-            t.reset()
-
-    def share(self):
-        shared = {}
-        shared['class'] = type(self)
-        shared['opt'] = self.opt
-        shared['tasks'] = [t.share() for t in self.tasks]
-        return shared
-
-
-def get_agent_module(dir_name):
-    if ':' in dir_name:
-        s = dir_name.split(':')
-        module_name = s[0]
-        class_name = s[1]
-    else:
-        module_name = "parlai.agents.%s.%s" % (dir_name, dir_name)
-        words = dir_name.split('_')
-        class_name = ''
-        for w in words:
-            class_name += ( w[0].upper() + w[1:])
-        class_name += 'Agent'
-    print(class_name)
-    my_module = importlib.import_module(module_name)
-    model_class = getattr(my_module, class_name)
-    return model_class
-
-def create_agent(opt):
-    """Create an agent from the options ``model``, ``model_params`` and ``model_file``.
-    The input is either of the form ``parlai.agents.ir_baseline.agents:IrBaselineAgent``
-    (i.e. the path followed by the class name) or else just ``ir_baseline`` which
-    assumes the path above, and a class name suffixed with 'Agent'.
-    """
-    model_class = get_agent_module(opt['model'])
-    return model_class(opt)
-
-# Helper functions to create agent/agents given shared parameters
-# returned from agent.share(). Useful for parallelism, sharing params, etc.
-def create_agent_from_shared(shared_agent):
-    a = shared_agent['class'](shared_agent['opt'], shared_agent)
-    return a
-
-def create_agents_from_shared(shared):
-    # create agents based on shared data.
-    shared_agents = []
-    for shared_agent in shared:
-        agent = create_agent_from_shared(shared_agent)
-        shared_agents.append(agent)
-    return shared_agents
 
 def create_task_agent_from_taskname(opt):
-    """Creates task agent(s) assuming the input ``task_dir:teacher_class``.
-
-    e.g. def_string is a shorthand path like ``babi:Task1k:1`` or ``#babi``
-    or a complete path like ``parlai.tasks.babi.agents:Task1kTeacher:1``, 
-    which essentially performs ``from parlai.tasks.babi import Task1kTeacher``
-    with the parameter ``1`` in ``opt['task']`` to be used by the class ``Task1kTeacher``.
+    """Creates task agent(s) assuming the input "task_dir:teacher_class"
+    e.g. def_string is a shorthand path like "babi:Task1k:1" or "#babi"
+    or a complete path like "parlai.tasks.babi.agents:Task1kTeacher:1"
+    This essentially performs "from parlai.tasks.babi import Task1kTeacher"
+    with the parameter 1 in opt['task'] to be used by the class Task1kTeacher
     """
     if ',' not in opt['task']:
         # Single task
@@ -357,3 +241,94 @@ def _create_task_agents(opt):
     if type(task_agents) != list:
         task_agents = [task_agents]
     return task_agents
+
+
+class MultiTaskTeacher(Teacher):
+    """Creates a teacher that is actually a set of teachers each based on
+    a task string--each of these teachers will get called in turn,
+    either randomly or in order.
+    They are all in the same world (they are the same agent switching tasks).
+
+    The task string format is described for the `create_task_agents` function
+    above.
+    """
+
+    def __init__(self, opt, shared=None):
+        self.tasks = []
+        self.opt = opt
+        self.id = opt['task']
+        tasks = opt['task'].split(',')
+        for k in tasks:
+            k = k.strip()
+            if k:
+                opt_singletask = copy.deepcopy(opt)
+                opt_singletask['task'] = k
+                self.tasks.extend(create_task_agent_from_taskname(
+                    opt_singletask))
+        self.task_idx = -1
+        self.new_task = True
+        self.random = opt.get('datatype') == 'train'
+
+    def __len__(self):
+        if not hasattr(self, 'len'):
+            self.len = 0
+            # length is sum of all task lengths
+            for _ind, t in enumerate(self.tasks):
+                self.len += len(t)
+        return self.len
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.epoch_done():
+            raise StopIteration()
+
+    def observe(self, observation):
+        self.tasks[self.task_idx].observe(observation)
+        if self.new_task:
+            self.new_task = False
+            if self.random:
+                self.task_idx = random.randrange(len(self.tasks))
+            else:
+                start_idx = self.task_idx
+                keep_looking = True
+                while keep_looking:
+                    self.task_idx = (self.task_idx + 1) % len(self.tasks)
+                    keep_looking = (self.tasks[self.task_idx].epoch_done() and
+                                    start_idx != self.task_idx)
+                if start_idx == self.task_idx:
+                    return {'text': 'There are no more examples remaining.'}
+        return observation
+
+    def act(self):
+        t = self.tasks[self.task_idx].act()
+        if t['episode_done']:
+            self.new_task = True
+        return t
+
+    def epoch_done(self):
+        for t in self.tasks:
+            if not t.epoch_done():
+                return False
+        return True
+
+    # return transformed metrics showing total examples and accuracy if avail.
+    def report(self):
+        m = {}
+        m['tasks'] = {}
+        sum_accuracy = 0
+        num_tasks = 0
+        total = 0
+        for i in range(len(self.tasks)):
+            mt = self.tasks[i].report()
+            m['tasks'][self.tasks[i].getID()] = mt
+            total += mt['total']
+            if 'accuracy' in mt:
+                sum_accuracy += mt['accuracy']
+                num_tasks += 1
+        m['total'] = total
+        m['accuracy'] = 0
+        if num_tasks > 0:
+            m['accuracy'] = sum_accuracy / num_tasks
+        return m

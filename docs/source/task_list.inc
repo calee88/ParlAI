@@ -1,6 +1,3 @@
-QA
---
-
 bAbI 1k
 ^^^^^^^
 
@@ -29,126 +26,6 @@ bAbI 10k
 **Notes**: You can access just one of the bAbI tasks with e.g. 'babi:Task10k:3' for task 3.
 
 
-MCTest
-^^^^^^
-
-**Tag**: ``#MCTest``
-
-**Full Path**: ``mctest``
-
-**Group Tags**: ``#all``, ``#QA``
-
-**Description**: Questions about short children's stories, from Richardson et al. '13. Link: https://www.microsoft.com/en-us/research/publication/mctest-challenge-dataset-open-domain-machine-comprehension-text/
-
-
-
-Movie Dialog QA
-^^^^^^^^^^^^^^^
-
-**Tag**: ``#MovieDD-QA``
-
-**Full Path**: ``moviedialog:Task:1``
-
-**Group Tags**: ``#all``, ``#QA``, ``#MovieDD``
-
-**Description**: Closed-domain QA dataset asking templated questions about movies, answerable from Wikipedia, similar to WikiMovies. From Dodge et al. '15. Link: https://arxiv.org/abs/1511.06931
-
-
-
-Movie Dialog Recommendations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Tag**: ``#MovieDD-Recs``
-
-**Full Path**: ``moviedialog:Task:2``
-
-**Group Tags**: ``#all``, ``#QA``, ``#MovieDD``
-
-**Description**: Questions asking for movie recommendations. From Dodge et al. '15. Link: https://arxiv.org/abs/1511.06931
-
-
-
-MTurk WikiMovies
-^^^^^^^^^^^^^^^^
-
-**Tag**: ``#MTurkWikiMovies``
-
-**Full Path**: ``mturkwikimovies``
-
-**Group Tags**: ``#all``, ``#QA``
-
-**Description**: Closed-domain QA dataset asking MTurk-derived questions about movies, answerable from Wikipedia. From Li et al. '16. Link: https://arxiv.org/abs/1611.09823
-
-
-
-Simple Questions
-^^^^^^^^^^^^^^^^
-
-**Tag**: ``#SimpleQuestions``
-
-**Full Path**: ``simplequestions``
-
-**Group Tags**: ``#all``, ``#QA``
-
-**Description**: Open-domain QA dataset based on Freebase triples from Bordes et al. '15. Link: https://arxiv.org/abs/1506.02075
-
-
-
-SQuAD
-^^^^^
-
-**Tag**: ``#SQuAD``
-
-**Full Path**: ``squad``
-
-**Group Tags**: ``#all``, ``#QA``
-
-**Description**: Open-domain QA dataset answerable from a given paragraph from Wikipedia, from Rajpurkar et al. '16. Link: https://arxiv.org/abs/1606.05250
-
-
-
-Web Questions
-^^^^^^^^^^^^^
-
-**Tag**: ``#WebQuestions``
-
-**Full Path**: ``webquestions``
-
-**Group Tags**: ``#all``, ``#QA``
-
-**Description**: Open-domain QA dataset from Web queries from Berant et al. '13. Link: http://www.aclweb.org/anthology/D13-1160
-
-
-
-WikiMovies
-^^^^^^^^^^
-
-**Tag**: ``#WikiMovies``
-
-**Full Path**: ``wikimovies``
-
-**Group Tags**: ``#all``, ``#QA``
-
-**Description**: Closed-domain QA dataset asking templated questions about movies, answerable from Wikipedia. From Miller et al. '16. Link: https://arxiv.org/abs/1606.03126
-
-
-
-WikiQA
-^^^^^^
-
-**Tag**: ``#WikiQA``
-
-**Full Path**: ``wikiqa``
-
-**Group Tags**: ``#all``, ``#QA``
-
-**Description**: Open domain QA from Wikipedia dataset from Yang et al. '15. Link: https://www.microsoft.com/en-us/research/publication/wikiqa-a-challenge-dataset-for-open-domain-question-answering/
-
-
-
-Cloze
------
-
 BookTest
 ^^^^^^^^
 
@@ -175,34 +52,18 @@ Children's Book Test (CBT)
 
 
 
-QA CNN
-^^^^^^
-
-**Tag**: ``#QACNN``
-
-**Full Path**: ``qacnn``
-
-**Group Tags**: ``#all``, ``#Cloze``
-
-**Description**: Cloze dataset based on a missing (anonymized) entity phrase from a CNN article, Hermann et al. '15. Link: https://arxiv.org/abs/1506.03340
-
-
-
-QA Daily Mail
+Cornell Movie
 ^^^^^^^^^^^^^
 
-**Tag**: ``#QADailyMail``
+**Tag**: ``#CornellMovie``
 
-**Full Path**: ``qadailymail``
+**Full Path**: ``cornell_movie``
 
-**Group Tags**: ``#all``, ``#Cloze``
+**Group Tags**: ``#all``, ``#ChitChat``
 
-**Description**: Cloze dataset based on a missing (anonymized) entity phrase from a Daily Mail article, Hermann et al. '15. Link: https://arxiv.org/abs/1506.03340
+**Description**: Fictional conversations extracted from raw movie scripts. Link: https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html
 
 
-
-Goal
-----
 
 Dialog Based Language Learning: bAbI Task
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -243,6 +104,32 @@ Dialog bAbI
 
 
 
+MCTest
+^^^^^^
+
+**Tag**: ``#MCTest``
+
+**Full Path**: ``mctest``
+
+**Group Tags**: ``#all``, ``#QA``
+
+**Description**: Questions about short children's stories, from Richardson et al. '13. Link: https://www.microsoft.com/en-us/research/publication/mctest-challenge-dataset-open-domain-machine-comprehension-text/
+
+
+
+Movie Dialog QA
+^^^^^^^^^^^^^^^
+
+**Tag**: ``#MovieDD-QA``
+
+**Full Path**: ``moviedialog:Task:1``
+
+**Group Tags**: ``#all``, ``#QA``, ``#MovieDD``
+
+**Description**: Closed-domain QA dataset asking templated questions about movies, answerable from Wikipedia, similar to WikiMovies. From Dodge et al. '15. Link: https://arxiv.org/abs/1511.06931
+
+
+
 Movie Dialog QA Recommendations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -256,19 +143,16 @@ Movie Dialog QA Recommendations
 
 
 
-ChitChat
---------
+Movie Dialog Recommendations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Cornell Movie
-^^^^^^^^^^^^^
+**Tag**: ``#MovieDD-Recs``
 
-**Tag**: ``#CornellMovie``
+**Full Path**: ``moviedialog:Task:2``
 
-**Full Path**: ``cornell_movie``
+**Group Tags**: ``#all``, ``#QA``, ``#MovieDD``
 
-**Group Tags**: ``#all``, ``#ChitChat``
-
-**Description**: Fictional conversations extracted from raw movie scripts. Link: https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html
+**Description**: Questions asking for movie recommendations. From Dodge et al. '15. Link: https://arxiv.org/abs/1511.06931
 
 
 
@@ -285,6 +169,19 @@ Movie Dialog Reddit
 
 
 
+MTurk WikiMovies
+^^^^^^^^^^^^^^^^
+
+**Tag**: ``#MTurkWikiMovies``
+
+**Full Path**: ``mturkwikimovies``
+
+**Group Tags**: ``#all``, ``#QA``
+
+**Description**: Closed-domain QA dataset asking MTurk-derived questions about movies, answerable from Wikipedia. From Li et al. '16. Link: https://arxiv.org/abs/1611.09823
+
+
+
 Open Subtitles
 ^^^^^^^^^^^^^^
 
@@ -295,6 +192,58 @@ Open Subtitles
 **Group Tags**: ``#all``, ``#ChitChat``
 
 **Description**: Dataset of dialogs from movie scripts: http://opus.lingfil.uu.se/OpenSubtitles.php. A variant of the dataset used in Vinyals & Le '15, https://arxiv.org/abs/1506.05869.
+
+
+
+QA CNN
+^^^^^^
+
+**Tag**: ``#QACNN``
+
+**Full Path**: ``qacnn``
+
+**Group Tags**: ``#all``, ``#Cloze``
+
+**Description**: Cloze dataset based on a missing (anonymized) entity phrase from a CNN article, Hermann et al. '15. Link: https://arxiv.org/abs/1506.03340
+
+
+
+QA Daily Mail
+^^^^^^^^^^^^^
+
+**Tag**: ``#QADailyMail``
+
+**Full Path**: ``qadailymail``
+
+**Group Tags**: ``#all``, ``#Cloze``
+
+**Description**: Cloze dataset based on a missing (anonymized) entity phrase from a Daily Mail article, Hermann et al. '15. Link: https://arxiv.org/abs/1506.03340
+
+
+
+Simple Questions
+^^^^^^^^^^^^^^^^
+
+**Tag**: ``#SimpleQuestions``
+
+**Full Path**: ``simplequestions``
+
+**Group Tags**: ``#all``, ``#QA``
+
+**Description**: Open-domain QA dataset based on Freebase triples from Bordes et al. '15. Link: https://arxiv.org/abs/1506.02075
+
+
+
+SQuAD
+^^^^^
+
+**Tag**: ``#SQuAD``
+
+**Full Path**: ``squad``
+
+**Group Tags**: ``#all``, ``#QA``
+
+**Description**: Open-domain QA dataset answerable from a given paragraph from Wikipedia, from Rajpurkar et al. '16. Link: https://arxiv.org/abs/1606.05250
 
 
 
@@ -311,45 +260,42 @@ Ubuntu
 
 
 
-Visual
-------
+Web Questions
+^^^^^^^^^^^^^
 
-VQAv1
-^^^^^
+**Tag**: ``#WebQuestions``
 
-**Tag**: ``#VQAv1``
+**Full Path**: ``webquestions``
 
-**Full Path**: ``vqa_v1``
+**Group Tags**: ``#all``, ``#QA``
 
-**Group Tags**: ``#all``, ``#Visual``
-
-**Description**: Open-ended question answering about visual content. From Agrawal et al. '15. Link: https://arxiv.org/abs/1505.00468
+**Description**: Open-domain QA dataset from Web queries from Berant et al. '13. Link: http://www.aclweb.org/anthology/D13-1160
 
 
 
-VQAv2
-^^^^^
+WikiMovies
+^^^^^^^^^^
 
-**Tag**: ``#VQAv2``
+**Tag**: ``#WikiMovies``
 
-**Full Path**: ``vqa_v2``
+**Full Path**: ``wikimovies``
 
-**Group Tags**: ``#all``, ``#Visual``
+**Group Tags**: ``#all``, ``#QA``
 
-**Description**: Bigger, more balanced version of the original VQA dataset. From Goyal et al. '16. Link: https://arxiv.org/abs/1612.00837
+**Description**: Closed-domain QA dataset asking templated questions about movies, answerable from Wikipedia. From Miller et al. '16. Link: https://arxiv.org/abs/1606.03126
 
 
 
-VisDial
-^^^^^^^
+WikiQA
+^^^^^^
 
-**Tag**: ``#VisDial``
+**Tag**: ``#WikiQA``
 
-**Full Path**: ``visdial``
+**Full Path**: ``wikiqa``
 
-**Group Tags**: ``#all``, ``#Visual``
+**Group Tags**: ``#all``, ``#QA``
 
-**Description**: Task which requires agents to hold a meaningful dialog about visual content. From Das et al. '16. Link: https://arxiv.org/abs/1611.08669
+**Description**: Open domain QA from Wikipedia dataset from Yang, et al. '15. Link: https://www.microsoft.com/en-us/research/publication/wikiqa-a-challenge-dataset-for-open-domain-question-answering/
 
 
 

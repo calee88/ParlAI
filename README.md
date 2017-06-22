@@ -1,4 +1,4 @@
-<p align="center"><img width="70%" src="docs/source/\_static/img/parlai.png" /></p>
+<p align="center"><img width="50%" src="docs/source/\_static/img/parlai.png" /></p>
 
 --------------------------------------------------------------------------------
 
@@ -20,8 +20,7 @@ ParlAI is described in the following paper:
 [“ParlAI: A Dialog Research Software Platform", arXiv:1705.06476](https://arxiv.org/abs/1705.06476).
 
 
-We are in an early-release Beta. Expect some adventures and rough edges.<br> 
-See the [news page](https://github.com/facebookresearch/ParlAI/blob/master/NEWS.md) for the latest additions & updates, and the website [http://parl.ai](http://parl.ai) for further docs.
+We are in an early-release Beta. Expect some adventures and rough edges.
 
 ## Goals
 
@@ -70,11 +69,6 @@ Displays 100 random examples from multi-tasking on the bAbI task and the SQuAD d
 python examples/display_data.py -t babi:task1k:1,squad -n 100
 ```
 
-Evaluate on the bAbI test set with a human agent (using the local keyboard as input):
-```bash
-python examples/eval_model.py -m local_human -t babi:Task1k:1 -dt valid
-```
-
 Evaluate an IR baseline model on the validation set of the Movies Subreddit dataset:
 ```bash
 python examples/eval_model.py -m ir_baseline -t "#moviedd-reddit" -dt valid
@@ -102,7 +96,7 @@ ParlAI currently requires Python3.
 Dependencies of the core modules are listed in requirement.txt.
 
 Several models included (in parlai/agents) have additional requirements.
-DrQA requires installing [PyTorch](http://pytorch.org/), and the MemNN model requires installing [Lua Torch](http://torch.ch/docs/getting-started.html). See their respective websites for installation instructions.
+DrQA requires installing [PyTorch](http://pytorch.org/), and the MemNN model requires installing [Lua Torch](http://torch.ch/). See their respective websites for installation instructions.
 
 ## Installing ParlAI
 
@@ -120,7 +114,6 @@ This is the recommended installation procedure, as it provides ready access to t
 All needed data will be downloaded to ~/ParlAI/data, and any non-data files (such as the MemNN code) if requested will be downloaded to ~/ParlAI/downloads. If you need to clear out the space used by these files, you can safely delete these directories and any files needed will be downloaded again.
 
 ## Worlds, agents and teachers
-
 The main concepts (classes) in ParlAI:
 - world - defines the environment (can be very simple, just two agents talking to each other).
 - agent – an agent in the world, e.g. the learner. (There can be multiple learners.)
@@ -210,7 +203,6 @@ The core library contains the following files:
 ### Agents
 
 The agents directory contains agents that have been approved into the ParlAI framework for shared use.
-We encourage you to contribute new ones!
 Currently available within this directory:
 
 - **drqa**: an attentive [LSTM model DrQA](https://arxiv.org/abs/1704.00051) implemented in PyTorch that has competitive results on the SQuAD dataset amongst others.
@@ -218,7 +210,6 @@ Currently available within this directory:
 - **remote_agent**: basic class for any agent connecting over ZMQ (memnn_luatorch_cpu uses this)
 - **ir_baseline**: simple information retrieval baseline that scores candidate responses with [TFIDF-weighted](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) matching
 - **repeat_label**: basic class for merely repeating all data sent to it (e.g. for piping to a file, debugging)
-- **local_human**: takes input from the keyboard as the act() function of the agent, so a human can act in the environment
 
 ### Examples
 
@@ -263,36 +254,36 @@ To add your own task:
 ### MTurk
 
 An important part of ParlAI is seamless integration with Mechanical Turk for data collection, training and evaluation.
-
 Human Turkers are also viewed as agents in ParlAI and hence person-person, person-bot, or multiple people and bots in group chat can all converse within the standard framework, switching out the roles as desired with no code changes to the agents. This is because Turkers also receive and send via a (pretty printed) version of the same interface, using the fields of the observation/action dict.
-
-We currently provide three examples: collecting data, human evaluation of a bot, and round-robin chat between local humans and remote Turkers.
+We provide two examples in the first release, collecting data, and human evaluation of a bot.
 
 <p align=center><img width="100%" src="docs/source/\_static/img/mturk.png" /></p>
 
-The mturk library contains the following directories:
+The mturk library contains the following directories and files:
 
-- **core**: this directory contains the core code for setting up AWS backend that supports the MTurk chat interface, code for HIT creation and approval, and the wrapper class `MTurkAgent` which encapsulates the MTurk interface into a standard `Agent` class.
-- **tasks**: this directory contains three sample MTurk tasks.
+- **core**: this directory contains the core code for setting up AWS backend that supports the MTurk chat interface, and code for HIT creation and approval.
+- **tasks**: this directory contains two sample MTurk tasks that are provided in the first release.
   - **_qa\_data\_collection_**: get questions and answers from turkers, given a random paragraph from SQuAD.
-  - **_model\_evaluator_**: ask turkers to evaluate the information retrieval baseline model on the Reddit movie dialog dataset.
-  - **_multi\_agent\_dialog_**: round-robin chat between two local human agents and two Turkers.
+  - **_model\_evaluator_**: evaluate the information retrieval baseline model on the Reddit movie dialog dataset.
+- **run_mturk.py**: file for calling mturk core code with user-specified task module, dialog model agent, number of HITs, and reward for each HIT.
 
-To run an MTurk task:
-- Go into the directory for the task you want to run.
-- Run `python run.py -nh <num_hits> -r <reward> [--sandbox]/[--live]`, with `<num_hits>` and `<reward>` set appropriately. Use `--sandbox` to run the task in MTurk sandbox mode before pushing it live.
+To run sample MTurk task and agent:
+- In __run\_mturk.py__, uncomment the task module and the agent class you want to use
+- For `create_hits` method, change `num_hits` and `hit_reward` if needed. Set `is_sandbox` to `True` if you want to run the sample in MTurk sandbox only, or set it to `False` to allow turkers to work on it and potentially get paid for it.
+- Run `python run_mturk.py`
 
-To add your own MTurk task:
+To add your own MTurk task and dialog model:
 - create a new folder within the mturk/tasks directory for your new task
-- implement __task\_config.py__, with at least the following fields in the `task_config` dictionary:
+- implement __task\_config.py__, with at least the following fields in the task_config dictionary:
   - `hit_title`: a short and descriptive title about the kind of task the HIT contains. On the Amazon Mechanical Turk web site, the HIT title appears in search results, and everywhere the HIT is mentioned.
   - `hit_description`: a description includes detailed information about the kind of task the HIT contains. On the Amazon Mechanical Turk web site, the HIT description appears in the expanded view of search results, and in the HIT and assignment screens.
   - `hit_keywords`: one or more words or phrases that describe the HIT, separated by commas. On MTurk website, these words are used in searches to find HITs.
+  - `worker_agent_id`: a short name indicating the turker's role in the conversation.
   - `task_description`: a detailed task description that will be shown on the HIT task preview page and on the left side of the chat page. Supports HTML formatting.
-- implement __run.py__, with code for setting up and running the world where `MTurkAgent` lives in.
-- (Optional) implement __worlds.py__, with a world class that extends from `World`.
-
-Please see [the MTurk tutorial](http://parl.ai/static/docs/mturk.html) to learn more about the MTurk examples and how to create and run your own task.
+- implement __agents.py__, with at least an agent class that extends from Agent
+  - write your own `__init__()` method that wraps your dialog model agent. (Please see mturk/tasks/model_evaluator/agents.py file for a concrete example.)
+  - write your own `act()` method that returns your dialog model's response as well as helpful text to the turker for what action they should take next.
+- import your task module and agent class in __run\_mturk.py__ file, and then run `python run_mturk.py`.
 
 ## Support
 If you have any questions, bug reports or feature requests, please don't hesitate to post on our [Github Issues page](https://github.com/facebookresearch/ParlAI/issues).

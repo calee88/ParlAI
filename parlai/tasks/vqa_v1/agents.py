@@ -5,9 +5,9 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 from parlai.core.agents import Teacher
-from parlai.core.dialog_teacher import load_image
 from .build import build, buildImage
 
+from PIL import Image
 import json
 import random
 import os
@@ -33,15 +33,25 @@ def _path(opt):
     else:
         raise RuntimeError('Not valid datatype.')
 
-    data_path = os.path.join(opt['datapath'], 'VQA-v1',
+    data_path = os.path.join(opt['datapath'], 'VQA-COCO2014',
                              ques_suffix + '_questions.json')
 
-    annotation_path = os.path.join(opt['datapath'], 'VQA-v1',
+    annotation_path = os.path.join(opt['datapath'], 'VQA-COCO2014',
                                    annotation_suffix + '_annotations.json')
 
     image_path = os.path.join(opt['datapath'], 'COCO-IMG', img_suffix)
 
     return data_path, annotation_path, image_path
+
+
+def _image_loader(opt, path):
+    """
+    Loads the appropriate image from the image_id and returns PIL Image format.
+    """
+    if not opt.get('no_images', False):
+        return Image.open(path).convert('RGB')
+    else:
+        return None
 
 
 class OeTeacher(Teacher):
@@ -101,7 +111,7 @@ class OeTeacher(Teacher):
         img_path = self.image_path + '%012d.jpg' % (image_id)
 
         action = {
-            'image': load_image(self.opt, img_path),
+            'image': _image_loader(self.opt, img_path),
             'text': question,
             'episode_done': True
         }
