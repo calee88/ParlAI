@@ -16,7 +16,7 @@ import torch.nn.functional as F
 
 import sys
 from os import path
-sys.path.append(path.abspath('../../../ptrnet/src'))
+sys.path.append(path.abspath('../ptrnet/src'))
 from pointer import LinearTanhSeqAttn
 import pdb
 
