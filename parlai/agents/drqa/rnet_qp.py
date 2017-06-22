@@ -118,7 +118,7 @@ class RnnDocReader(nn.Module):
             question_hidden_size *= opt['question_layers']
 
         # Question merging
-        if opt['question_merge'] not in ['avg', 'self_attn']:
+        if opt['question_merge'] not in ['avg', 'self_attn', 'tanh']:
             raise NotImplementedError('merge_mode = %s' % opt['merge_mode'])
         if opt['question_merge'] == 'tanh':
             self.self_attn = LinearTanhSeqAttn(question_hidden_size, question_hidden_size)
