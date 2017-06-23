@@ -142,7 +142,8 @@ class RnnDocReader(nn.Module):
             qp_matched_size = qp_matched_size + doc_hidden_size        
  
         ## PP matching: 
-                
+        #pdb.set_trace()
+             
         opt['pp_rnn_size'] = qp_matched_size * 2
         if opt['pp_bottleneck']:
             opt['pp_rnn_size'] = opt['hidden_size']
@@ -155,14 +156,16 @@ class RnnDocReader(nn.Module):
             rnn_type=self.RNN_TYPES[opt['rnn_type']],
             birnn=opt['pp_birnn'],
             concat = opt['pp_concat'],
-            gate=False
+            gate=opt['pp_gate'], 
+            rnn=opt['pp_rnn'],
+            identity = True
         )
         pp_matched_size = opt['pp_rnn_size']
         if opt['pp_birnn']:
             pp_matched_size = pp_matched_size * 2
         if opt['pp_concat']:
             pp_matched_size = pp_matched_size + qp_matched_size
- 
+                
         # Bilinear attention for span start/end
         if opt['task_QA']:
             self.start_attn = layers.BilinearSeqAttn(

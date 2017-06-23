@@ -54,6 +54,7 @@ def main(opt):
     valid_time = Timer()
 
     # Sent prediction
+    pdb.set_trace()
     valid_world.agents[1].opt['ans_sent_predict'] = False
     valid_world.agents[1].model.network.opt['ans_sent_predict'] = False  # disable sentence predicction by default
     if opt['ans_sent_predict']:
