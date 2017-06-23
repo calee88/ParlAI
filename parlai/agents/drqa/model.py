@@ -11,7 +11,7 @@ import logging
 
 from torch.autograd import Variable
 from .utils import load_embeddings, AverageMeter
-from .rnn_reader import RnnDocReader
+#from .rnn_reader import RnnDocReader
 
 
 import pdb
@@ -25,6 +25,11 @@ class DocReaderModel(object):
     """
 
     def __init__(self, opt, word_dict, char_dict, feature_dict, state_dict=None):
+
+        #Cudnn
+        #if not opt['use_cudnn']:
+        #    torch.backends.cudnn.enabled=False
+
         # Book-keeping.
         self.opt = opt
         self.word_dict = word_dict

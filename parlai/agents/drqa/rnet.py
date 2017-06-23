@@ -25,6 +25,10 @@ class RnnDocReader(nn.Module):
         # Store config
         self.opt = opt
 
+        #Cudnn
+        #if not opt['use_cudnn']:
+        #    torch.backends.cudnn.enabled=False
+
         # Word embeddings (+1 for padding), usually initialized by GloVE
         self.embedding = nn.Embedding(opt['vocab_size'],
                                       opt['embedding_dim'],
@@ -70,13 +74,14 @@ class RnnDocReader(nn.Module):
         else:
             doc_input_size = opt['embedding_dim'] + opt['num_features']
 
-        if opt['add_char2word']:
-            doc_input_size += opt['embedding_dim'] + opt['embedding_dim_TDNN']
-        else:
-            doc_input_size += opt['embedding_dim']
+
 
         if opt['use_qemb']:
-            pass
+            if opt['add_char2word']:
+                doc_input_size += opt['embedding_dim'] + opt['embedding_dim_TDNN']
+            else:
+                doc_input_size += opt['embedding_dim']
+
         #pdb.set_trace()
 
         # RNN document encoder
@@ -123,7 +128,7 @@ class RnnDocReader(nn.Module):
         # Q-P matching
         opt['qp_rnn_size'] = doc_hidden_size + question_hidden_size
         if opt['qp_bottleneck']:
-            opt['qp_rnn_size'] = opt['hidden_size']
+            opt['qp_rnn_size'] = opt['hidden_size_bottleneck']
         
         self.qp_match = layers.GatedAttentionBilinearRNN(
             x_size = doc_hidden_size,
@@ -145,7 +150,7 @@ class RnnDocReader(nn.Module):
                 
         opt['pp_rnn_size'] = qp_matched_size * 2
         if opt['pp_bottleneck']:
-            opt['pp_rnn_size'] = opt['hidden_size']
+            opt['pp_rnn_size'] = opt['hidden_size_bottleneck']
         
         self.pp_match = layers.GatedAttentionBilinearRNN(
             x_size = qp_matched_size,
