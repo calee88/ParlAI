@@ -12,6 +12,8 @@ import numpy as np
 
 import pdb
 
+#torch.backends.cudnn.enabled=False
+
 # ------------------------------------------------------------------------------
 # Modules
 # ------------------------------------------------------------------------------
@@ -211,6 +213,7 @@ class SeqAttnMatch(nn.Module):
         Output shapes:
             matched_seq = batch * len1 * h
         """
+        #pdb.set_trace()
         # Project vectors
         if self.linear:
             x_proj = self.linear(x.view(-1, x.size(2))).view(x.size())
@@ -292,7 +295,7 @@ class LinearSeqAttn(nn.Module):
 class GatedAttentionBilinearRNN(nn.Module):
     """Given sequences X and Y, match sequence Y to each element in X.  --- eq(4) in r-net
     (X=passage u^P,  Y=Question u^Q)    
-    * alpha^t_i = softmax(U^Q_j * Wu * u^P_i)
+    * alpha^t_i = softmax(u^Q_j * Wu * u^P_i)
     * c_t = sum(alpha^t_i * u^Q_i) for i in X
     * gated[u^P_t, c_t] = sigmoid(W_g * [u^P_t, c_t])
     * v^P_t = RNN(v^P_(t-1), gated[u^P_t, c_t])
@@ -307,12 +310,15 @@ class GatedAttentionBilinearRNN(nn.Module):
         self.hidden_size = hidden_size
         self.padding = padding
         self.concat_layers = concat
+
+        #pdb.set_trace()
+
         if not identity:
             self.linear = nn.Linear(y_size, x_size, bias=False)
         else:
             self.linear = None
         
-        self.gate = gate        
+        self.gate = gate
         if self.gate:
             self.gate_layer = nn.Sequential(
                 nn.Linear(y_size + x_size, 1, bias=False ),  # the 2nd hidden_size can be different from 'hidden_size'
@@ -361,18 +367,26 @@ class GatedAttentionBilinearRNN(nn.Module):
         # Attention
         # * alpha^t_i = softmax(tanh( u^Q_j * W * u^P_i ))
         # * c_t = sum(alpha^t_i * u^Q_i) for i in X
+        #pdb.set_trace()
         Wy = self.linear(y.view(-1, y_size)).view(-1, y_len, x_size) if self.linear is not None else y
         xWy = x.bmm(Wy.transpose(1,2))
         xWy.data.masked_fill_(y_mask.data.unsqueeze(1).expand_as(xWy), -float('inf'))
-        alpha = F.softmax(xWy.view(-1, y_len))        
-                
-        alpha = alpha.view(alpha.size(0), 1, y_len)
-#        attend_y = alpha.bmm(y.unsqueeze(1).expand(nbatch,x_len,y_len,y_size).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)        
-        attend_y = alpha.bmm(y.unsqueeze(1).repeat(1,x_len,1,1).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)        
+        alpha = F.softmax(xWy.view(-1, y_len))
+
+        # Ver1 (Problem : .repeat())
+        #pdb.set_trace()
+        #alpha = alpha.view(alpha.size(0), 1, y_len)
+        #attend_y = alpha.bmm(y.unsqueeze(1).repeat(1,x_len,1,1).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)         # HR ver1
+
+        # Ver2 -- get exactly same value as Ver1
+        alpha = alpha.view(nbatch, x_len, y_len)
+        attend_y = alpha.bmm(y)
+
+        #pdb.set_trace()
 
         attend_y.data.masked_fill_(x_mask.unsqueeze(2).expand_as(attend_y).data, 0) ## comment out?
         rnn_input = torch.cat((x, attend_y), 2)
-        
+
         # Gate: gated[u^P_t, c_t] = sigmoid(W_g * [u^P_t, c_t])
         if self.gate:
             gate = self.gate_layer(rnn_input.view(-1, rnn_input.size(2))).view(nbatch, x_len, 1).expand_as(rnn_input) #1, 1, rnn_input.size(2))
@@ -395,7 +409,7 @@ class GatedAttentionBilinearRNN(nn.Module):
                 outputs.append(rnn_output)
                 output = outputs[1].transpose(0,1)
             
-        # Concat hidden layers
+       # Concat hidden layers
         if self.concat_layers:
             output = torch.cat((output, x), 2)
             

@@ -25,6 +25,10 @@ class RnnDocReader(nn.Module):
         # Store config
         self.opt = opt
 
+        #Cudnn
+        #if not opt['use_cudnn']:
+        #    torch.backends.cudnn.enabled=False
+
         # Word embeddings (+1 for padding), usually initialized by GloVE
         self.embedding = nn.Embedding(opt['vocab_size'],
                                       opt['embedding_dim'],
@@ -59,7 +63,7 @@ class RnnDocReader(nn.Module):
 
         # Projection for attention weighted question
         if opt['use_qemb']:
-            if opt['add_char2word']:
+            if opt['add_char2word'] and (not opt['qemb_with_wordonly']):
                 self.qemb_match = layers.SeqAttnMatch(opt['embedding_dim'] + opt['embedding_dim_TDNN'])
             else:
                 self.qemb_match = layers.SeqAttnMatch(opt['embedding_dim'])
@@ -70,13 +74,11 @@ class RnnDocReader(nn.Module):
         else:
             doc_input_size = opt['embedding_dim'] + opt['num_features']
 
-        if opt['add_char2word']:
-            doc_input_size += opt['embedding_dim'] + opt['embedding_dim_TDNN']
-        else:
-            doc_input_size += opt['embedding_dim']
-
         if opt['use_qemb']:
-            pass
+            if opt['add_char2word'] and (not opt['qemb_with_wordonly']):
+                doc_input_size += opt['embedding_dim'] + opt['embedding_dim_TDNN']
+            else:
+                doc_input_size += opt['embedding_dim']
         #pdb.set_trace()
 
         # RNN document encoder
@@ -95,6 +97,7 @@ class RnnDocReader(nn.Module):
         q_input_size = opt['embedding_dim']
         if opt['add_char2word']:
             q_input_size += opt['embedding_dim_TDNN']
+
         self.question_rnn = layers.StackedBRNN(
             input_size=q_input_size,
             hidden_size=opt['hidden_size'],
@@ -189,20 +192,21 @@ class RnnDocReader(nn.Module):
             x2_cw_emb = self.TDNN(x2_c_emb)  # N x Tq x sum(H)
 
             # Merge word + char
-            x1_emb = torch.cat((x1_emb, x1_cw_emb), 2)
-            x2_emb = torch.cat((x2_emb, x2_cw_emb), 2)
+            x1_emb_combine = torch.cat((x1_emb, x1_cw_emb), 2)
+            x2_emb_combine = torch.cat((x2_emb, x2_cw_emb), 2)
             ###x1_mask = torch.cat([x1_mask, x1_c_mask], 2)  # For this version, we do not utilize char mask
             ###x2_mask = torch.cat([x2_mask, x2_c_mask], 2)  # For this version, we do not utilize char mask
 
             # Highway network
             if self.opt['nLayer_Highway'] > 0:
-                [batch_size, seq_len, embed_size] = x1_emb.size()
-                x1_emb = self.Highway(x1_emb.view(-1, embed_size))
-                x1_emb = x1_emb.view(batch_size, -1, embed_size)
+                #pdb.set_trace()
+                [batch_size, seq_len, embed_size] = x1_emb_combine.size()
+                x1_emb_combine = self.Highway(x1_emb_combine.view(-1, embed_size))
+                x1_emb_combine = x1_emb_combine.view(batch_size, -1, embed_size)
 
-                [batch_size, seq_len, embed_size] = x2_emb.size()
-                x2_emb = self.Highway(x2_emb.view(-1, embed_size))
-                x2_emb = x2_emb.view(batch_size, -1, embed_size)
+                [batch_size, seq_len, embed_size] = x2_emb_combine.size()
+                x2_emb_combine = self.Highway(x2_emb_combine.view(-1, embed_size))
+                x2_emb_combine = x2_emb_combine.view(batch_size, -1, embed_size)
         else:
             if (x1_c and x2_c):
                 x1_sent_mask = x1_c
@@ -210,15 +214,19 @@ class RnnDocReader(nn.Module):
 
         # Dropout on embeddings
         if self.opt['dropout_emb'] > 0:
-            x1_emb = nn.functional.dropout(x1_emb, p=self.opt['dropout_emb'], training=self.training)
-            x2_emb = nn.functional.dropout(x2_emb, p=self.opt['dropout_emb'], training=self.training)
+            x1_emb_combine = nn.functional.dropout(x1_emb_combine, p=self.opt['dropout_emb'], training=self.training)
+            x2_emb_combine = nn.functional.dropout(x2_emb_combine, p=self.opt['dropout_emb'], training=self.training)
 
         # Add attention-weighted question representation
         if self.opt['use_qemb']:
-            x2_weighted_emb = self.qemb_match(x1_emb, x2_emb, x2_mask)
-            drnn_input = torch.cat([x1_emb, x2_weighted_emb, x1_f], 2)
+            #pdb.set_trace()
+            if self.opt['qemb_with_wordonly']:
+                x2_weighted_emb = self.qemb_match(x1_emb, x2_emb, x2_mask)
+            else:
+                x2_weighted_emb = self.qemb_match(x1_emb_combine, x2_emb_combine, x2_mask)
+            drnn_input = torch.cat([x1_emb_combine, x2_weighted_emb, x1_f], 2)
         else:
-            drnn_input = torch.cat([x1_emb, x1_f], 2)
+            drnn_input = torch.cat([x1_emb_combine, x1_f], 2)
 
         # Encode document with RNN
         doc_hiddens = self.doc_rnn(drnn_input, x1_mask)
@@ -226,7 +234,7 @@ class RnnDocReader(nn.Module):
         #pdb.set_trace()
 
         # Encode question with RNN + merge hiddens
-        question_hiddens = self.question_rnn(x2_emb, x2_mask)
+        question_hiddens = self.question_rnn(x2_emb_combine, x2_mask)
         if self.opt['question_merge'] == 'avg':
             q_merge_weights = layers.uniform_weights(question_hiddens, x2_mask)
         elif self.opt['question_merge'] == 'self_attn':
