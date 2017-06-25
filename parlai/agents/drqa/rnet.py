@@ -163,10 +163,10 @@ class RnnDocReader(nn.Module):
             concat = opt['pp_concat'],
             gate=opt['pp_gate'], 
             rnn=opt['pp_rnn'],
-            identity = True
+            identity = ['pp_identity']
         )
         pp_matched_size = opt['pp_rnn_size']
-        if opt['pp_birnn']:
+        if opt['pp_birnn'] and opt['pp_rnn']:
             pp_matched_size = pp_matched_size * 2
         if opt['pp_concat']:
             pp_matched_size = pp_matched_size + qp_matched_size
@@ -241,6 +241,7 @@ class RnnDocReader(nn.Module):
                                      ques_len,
                                      max_wordL_q,
                                      -1)
+
             # Produce char-aware word embed
             x1_cw_emb = self.TDNN(x1_c_emb)  # N x Td x sum(H)
             x2_cw_emb = self.TDNN(x2_c_emb)  # N x Tq x sum(H)

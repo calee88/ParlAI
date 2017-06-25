@@ -86,6 +86,8 @@ def add_cmdline_args(parser):
                         help='----')
     parser.add_argument('--pp_rnn', type='bool', default=True,
                         help='----')
+    parser.add_argument('--pp_identity', type='bool', default=True,
+                        help='----')
     
     # Optimization details
     parser.add_argument('--valid_metric', type=str,

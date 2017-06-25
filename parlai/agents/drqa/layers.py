@@ -401,6 +401,7 @@ class GatedAttentionBilinearRNN(nn.Module):
         """Faster encoding that ignores any padding."""
         # Encode all layers
         output = self._gated_attended_input(x, x_mask, y, y_mask)
+#        pdb.set_trace()
         if self.rnn:
             outputs = [output] 
             for i in range(self.num_layers): ## self.num_layers == 1
