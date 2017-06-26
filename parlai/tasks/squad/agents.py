@@ -99,6 +99,10 @@ class DefaultTeacher(DialogTeacher):
         else:
             suffix = 'dev'
         opt['datafile'] = os.path.join(opt['datapath'], 'SQuAD', suffix + '-v1.1.json')
+
+        if opt['datatype'].startswith('evasquad'):
+            opt['datafile'] = opt['datatype'].replace('evasquad', "")
+
         self.id = 'squad'
         super().__init__(opt, shared)
 
