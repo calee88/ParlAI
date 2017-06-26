@@ -37,6 +37,7 @@ from parlai.core.params import ParlaiParser
 from parlai.core.worlds import create_task
 
 import pdb
+import gc # garbage collector
 
 def build_dict(opt):
     opt = copy.deepcopy(opt)
@@ -125,6 +126,8 @@ def validate(opt, agent, n_iter):
 
 def main(opt):
     #iter_global = 0
+    #pdb.set_trace()
+    # Cudnn
 
     # Build word dictionary from task data
     if os.path.isfile(("data/SQuAD/dict.word." + str(opt['vocab_size']) + ".pkl")):
@@ -139,6 +142,7 @@ def main(opt):
 
     dictionary_char=None
     if opt['add_char2word']:
+        opt['NULLWORD_Idx_in_char'] = opt['vocab_size_char']-1
         if os.path.isfile(("data/SQuAD/dict.char." + str(opt['vocab_size_char']) + ".pkl")):
             dictionary_char = pickle.load( open( ("data/SQuAD/dict.char." + str(opt['vocab_size_char']) + ".pkl"), "rb") )  # char dictionary
             logger.info('successfully load char dictionary')
@@ -187,6 +191,7 @@ def main(opt):
     # Keep track of best model + how long since the last improvement
     best_valid = 0
     impatience = 0
+    lrate_decay = 0
 
     logger.info("[ Ok, let's go... ]")
     iteration = 0
@@ -195,14 +200,19 @@ def main(opt):
         # Train...
         logger.info('[ Training for %d iters... ]' % opt['train_interval'])
         train_time.reset()
+        iter = 0
         for _ in range(opt['train_interval']):
+            iter+=1
             train_world.parley()
-        #logger.info('[ Done. Time = %.2f (s) ]' % train_time.time())
+            #if iter % opt['collect_garbage_every'] == 0:
+            if iter % 100 == 0:
+                gc.collect()
 
         # ...validate!
         print('start validation')
         valid_metric = validate(opt, doc_reader, iteration)
         if valid_metric > best_valid:
+        #if False:
             logger.info(
                 '[ Best eval %d: %s = %.4f (old = %.4f) ]' %
                 (iteration, opt['valid_metric'], valid_metric, best_valid)

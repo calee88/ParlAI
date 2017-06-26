@@ -12,6 +12,8 @@ import numpy as np
 
 import pdb
 
+#torch.backends.cudnn.enabled=False
+
 # ------------------------------------------------------------------------------
 # Modules
 # ------------------------------------------------------------------------------
@@ -211,6 +213,7 @@ class SeqAttnMatch(nn.Module):
         Output shapes:
             matched_seq = batch * len1 * h
         """
+        #pdb.set_trace()
         # Project vectors
         if self.linear:
             x_proj = self.linear(x.view(-1, x.size(2))).view(x.size())
@@ -292,7 +295,7 @@ class LinearSeqAttn(nn.Module):
 class GatedAttentionBilinearRNN(nn.Module):
     """Given sequences X and Y, match sequence Y to each element in X.  --- eq(4) in r-net
     (X=passage u^P,  Y=Question u^Q)    
-    * alpha^t_i = softmax(U^Q_j * Wu * u^P_i)
+    * alpha^t_i = softmax(u^Q_j * Wu * u^P_i)
     * c_t = sum(alpha^t_i * u^Q_i) for i in X
     * gated[u^P_t, c_t] = sigmoid(W_g * [u^P_t, c_t])
     * v^P_t = RNN(v^P_(t-1), gated[u^P_t, c_t])
@@ -301,24 +304,27 @@ class GatedAttentionBilinearRNN(nn.Module):
     def __init__(self, x_size, y_size, hidden_size,
                  rnn_type=nn.LSTM,
                  gate=True, padding = False,
-                 birnn=False, identity=False, concat=False):
+                 birnn=False, identity=False, concat=False, rnn=True):
         super(GatedAttentionBilinearRNN, self).__init__()
         self.num_layers = 1
         self.hidden_size = hidden_size
         self.padding = padding
         self.concat_layers = concat
+
+        #pdb.set_trace()
+
         if not identity:
             self.linear = nn.Linear(y_size, x_size, bias=False)
         else:
             self.linear = None
-
-        self.gate = gate        
+        
+        self.gate = gate
         if self.gate:
             self.gate_layer = nn.Sequential(
                 nn.Linear(y_size + x_size, 1, bias=False ),  # the 2nd hidden_size can be different from 'hidden_size'
                 nn.Sigmoid())
         
-        if hidden_size is not (x_size+y_size):
+        if not (hidden_size == (x_size+y_size)):
             #self.bottleneck_layer = nn.Sequential(nn.Linear(y_size + x_size, hidden_size),
                                                   #nn.ReLU())
             self.bottleneck_layer = nn.Linear(y_size + x_size, hidden_size)
@@ -326,11 +332,13 @@ class GatedAttentionBilinearRNN(nn.Module):
         else:
             self.bottleneck_layer = None
             input_size = y_size + x_size
-            
-        self.rnns = nn.ModuleList()
-        self.rnns.append(rnn_type(input_size, hidden_size,
-                                  num_layers=1, bidirectional=birnn))
-
+        
+        self.rnn = rnn 
+        if self.rnn:
+            self.rnns = nn.ModuleList()
+            self.rnns.append(rnn_type(input_size, hidden_size,
+                                      num_layers=1, bidirectional=birnn))
+        
 
     def forward(self,  x, x_mask, y, y_mask):
         """Can choose to either handle or ignore variable length sequences.
@@ -359,18 +367,26 @@ class GatedAttentionBilinearRNN(nn.Module):
         # Attention
         # * alpha^t_i = softmax(tanh( u^Q_j * W * u^P_i ))
         # * c_t = sum(alpha^t_i * u^Q_i) for i in X
+        #pdb.set_trace()
         Wy = self.linear(y.view(-1, y_size)).view(-1, y_len, x_size) if self.linear is not None else y
         xWy = x.bmm(Wy.transpose(1,2))
         xWy.data.masked_fill_(y_mask.data.unsqueeze(1).expand_as(xWy), -float('inf'))
-        alpha = F.softmax(xWy.view(-1, y_len))        
-                
-        alpha = alpha.view(alpha.size(0), 1, y_len)
-#        attend_y = alpha.bmm(y.unsqueeze(1).expand(nbatch,x_len,y_len,y_size).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)        
-        attend_y = alpha.bmm(y.unsqueeze(1).repeat(1,x_len,1,1).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)        
+        alpha = F.softmax(xWy.view(-1, y_len))
+
+        # Ver1 (Problem : .repeat())
+        #pdb.set_trace()
+        #alpha = alpha.view(alpha.size(0), 1, y_len)
+        #attend_y = alpha.bmm(y.unsqueeze(1).repeat(1,x_len,1,1).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)         # HR ver1
+
+        # Ver2 -- get exactly same value as Ver1
+        alpha = alpha.view(nbatch, x_len, y_len)
+        attend_y = alpha.bmm(y)
+
+        #pdb.set_trace()
 
         attend_y.data.masked_fill_(x_mask.unsqueeze(2).expand_as(attend_y).data, 0) ## comment out?
         rnn_input = torch.cat((x, attend_y), 2)
-        
+
         # Gate: gated[u^P_t, c_t] = sigmoid(W_g * [u^P_t, c_t])
         if self.gate:
             gate = self.gate_layer(rnn_input.view(-1, rnn_input.size(2))).view(nbatch, x_len, 1).expand_as(rnn_input) #1, 1, rnn_input.size(2))
@@ -383,17 +399,18 @@ class GatedAttentionBilinearRNN(nn.Module):
         
     def _forward_unpadded(self,  x, x_mask, y, y_mask):
         """Faster encoding that ignores any padding."""
-        
         # Encode all layers
-        rnn_input = self._gated_attended_input(x, x_mask, y, y_mask)
-        outputs = [rnn_input] 
-        for i in range(self.num_layers): ## self.num_layers == 1
-            # RNN: v^P_t = RNN(v^P_(t-1), gated[u^P_t, c_t])   
-            rnn_output = self.rnns[i](outputs[-1].transpose(0,1))[0] # batch_first = False
-            outputs.append(rnn_output)
-
-        output = outputs[1].transpose(0,1)
-        # Concat hidden layers
+        output = self._gated_attended_input(x, x_mask, y, y_mask)
+#        pdb.set_trace()
+        if self.rnn:
+            outputs = [output] 
+            for i in range(self.num_layers): ## self.num_layers == 1
+                # RNN: v^P_t = RNN(v^P_(t-1), gated[u^P_t, c_t])   
+                rnn_output = self.rnns[i](outputs[-1].transpose(0,1))[0] # batch_first = False
+                outputs.append(rnn_output)
+                output = outputs[1].transpose(0,1)
+            
+       # Concat hidden layers
         if self.concat_layers:
             output = torch.cat((output, x), 2)
             
@@ -413,29 +430,32 @@ class GatedAttentionBilinearRNN(nn.Module):
         
 
         input = self._gated_attended_input(x, x_mask, y, y_mask)
+        
+        if self.rnn:
+            # Sort x
+            input = input.index_select(0, idx_sort)
+    
+            # Transpose batch and sequence dims
+            input = input.transpose(0, 1)
+    
+            # Pack it up
+            rnn_input = nn.utils.rnn.pack_padded_sequence(input, lengths)
+    
+            # Encode all layers
+            outputs = [rnn_input]
+            for i in range(self.num_layers):
+                rnn_input = outputs[-1]
+                outputs.append(self.rnns[i](rnn_input)[0])
+    
+            # Unpack everything
+            for i, o in enumerate(outputs[1:], 1):
+                outputs[i] = nn.utils.rnn.pad_packed_sequence(o)[0]
 
-        # Sort x
-        input = input.index_select(0, idx_sort)
-
-        # Transpose batch and sequence dims
-        input = input.transpose(0, 1)
-
-        # Pack it up
-        rnn_input = nn.utils.rnn.pack_padded_sequence(input, lengths)
-
-        # Encode all layers
-        outputs = [rnn_input]
-        for i in range(self.num_layers):
-            rnn_input = outputs[-1]
-            outputs.append(self.rnns[i](rnn_input)[0])
-
-        # Unpack everything
-        for i, o in enumerate(outputs[1:], 1):
-            outputs[i] = nn.utils.rnn.pad_packed_sequence(o)[0]
-
-        # Transpose and unsort
-        output = outputs[1].transpose(0, 1)
-        output = output.index_select(0, idx_unsort)
+            # Transpose and unsort
+            output = outputs[1].transpose(0, 1)
+            output = output.index_select(0, idx_unsort)
+        else:
+            output = input
         
         # Concat hidden layers or take final
         if self.concat_layers:

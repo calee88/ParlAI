@@ -225,6 +225,7 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
     # Batch document with character level encoding
     if use_char:
         x1_c = torch.LongTensor(len(docs), max_length, max_word_len).fill_(null)
+    # Batch questions
         for i in range(len(docs_char)):  # Iterate over documents
             for j in range(len(docs_char[i])):  # Iterate over words
                 #print('(i,j) = (', i, ', ', j, ')')
@@ -233,7 +234,6 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
             if(len(docs_char[i]) < max_length):
                 x1_c[i, len(docs_char[i]):, 0].fill_(NULLWORD_Idx_in_char)  # fill <NULL_WORD>
 
-    # Batch questions
     max_length = max([q.size(0) for q in questions])
     x2 = torch.LongTensor(len(questions), max_length).fill_(null)
     x2_mask = torch.ByteTensor(len(questions), max_length).fill_(1)

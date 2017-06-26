@@ -25,6 +25,10 @@ class RnnDocReader(nn.Module):
         # Store config
         self.opt = opt
 
+        #Cudnn
+        #if not opt['use_cudnn']:
+        #    torch.backends.cudnn.enabled=False
+
         # Word embeddings (+1 for padding), usually initialized by GloVE
         self.embedding = nn.Embedding(opt['vocab_size'],
                                       opt['embedding_dim'],
@@ -70,13 +74,14 @@ class RnnDocReader(nn.Module):
         else:
             doc_input_size = opt['embedding_dim'] + opt['num_features']
 
-        if opt['add_char2word']:
-            doc_input_size += opt['embedding_dim'] + opt['embedding_dim_TDNN']
-        else:
-            doc_input_size += opt['embedding_dim']
+
 
         if opt['use_qemb']:
-            pass
+            if opt['add_char2word']:
+                doc_input_size += opt['embedding_dim'] + opt['embedding_dim_TDNN']
+            else:
+                doc_input_size += opt['embedding_dim']
+
         #pdb.set_trace()
 
         # RNN document encoder
@@ -123,7 +128,7 @@ class RnnDocReader(nn.Module):
         # Q-P matching
         opt['qp_rnn_size'] = doc_hidden_size + question_hidden_size
         if opt['qp_bottleneck']:
-            opt['qp_rnn_size'] = opt['hidden_size']
+            opt['qp_rnn_size'] = opt['hidden_size_bottleneck']
         
         self.qp_match = layers.GatedAttentionBilinearRNN(
             x_size = doc_hidden_size,
@@ -141,10 +146,12 @@ class RnnDocReader(nn.Module):
         if opt['qp_concat']:
             qp_matched_size = qp_matched_size + doc_hidden_size        
  
-         ## PP matching: 
+        ## PP matching: 
+        #pdb.set_trace()
+             
         opt['pp_rnn_size'] = qp_matched_size * 2
         if opt['pp_bottleneck']:
-            opt['pp_rnn_size'] = opt['hidden_size']
+            opt['pp_rnn_size'] = opt['hidden_size_bottleneck']
         
         self.pp_match = layers.GatedAttentionBilinearRNN(
             x_size = qp_matched_size,
@@ -154,14 +161,16 @@ class RnnDocReader(nn.Module):
             rnn_type=self.RNN_TYPES[opt['rnn_type']],
             birnn=opt['pp_birnn'],
             concat = opt['pp_concat'],
-            gate=False
+            gate=opt['pp_gate'], 
+            rnn=opt['pp_rnn'],
+            identity = ['pp_identity']
         )
         pp_matched_size = opt['pp_rnn_size']
-        if opt['pp_birnn']:
+        if opt['pp_birnn'] and opt['pp_rnn']:
             pp_matched_size = pp_matched_size * 2
         if opt['pp_concat']:
             pp_matched_size = pp_matched_size + qp_matched_size
- 
+                
         # Bilinear attention for span start/end
         if opt['task_QA']:
             self.start_attn = layers.BilinearSeqAttn(
@@ -232,6 +241,7 @@ class RnnDocReader(nn.Module):
                                      ques_len,
                                      max_wordL_q,
                                      -1)
+
             # Produce char-aware word embed
             x1_cw_emb = self.TDNN(x1_c_emb)  # N x Td x sum(H)
             x2_cw_emb = self.TDNN(x2_c_emb)  # N x Tq x sum(H)

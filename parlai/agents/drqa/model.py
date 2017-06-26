@@ -11,7 +11,7 @@ import logging
 
 from torch.autograd import Variable
 from .utils import load_embeddings, AverageMeter
-from .rnn_reader import RnnDocReader
+#from .rnn_reader import RnnDocReader
 
 
 import pdb
@@ -25,6 +25,11 @@ class DocReaderModel(object):
     """
 
     def __init__(self, opt, word_dict, char_dict, feature_dict, state_dict=None):
+
+        #Cudnn
+        #if not opt['use_cudnn']:
+        #    torch.backends.cudnn.enabled=False
+
         # Book-keeping.
         self.opt = opt
         self.word_dict = word_dict
@@ -71,7 +76,12 @@ class DocReaderModel(object):
                                        weight_decay=opt['weight_decay'])
         elif opt['optimizer'] == 'adamax':
             self.optimizer = optim.Adamax(parameters,
-                                          weight_decay=opt['weight_decay'])
+                                          weight_decay=opt['weight_decay'],
+                                          lr=self.opt['learning_rate'])
+        elif self.opt['optimizer'] == 'adam':
+            self.optimizer = optim.Adam(parameters,
+                                          weight_decay=self.opt['weight_decay'], 
+                                          lr=self.opt['learning_rate'])
         else:
             raise RuntimeError('Unsupported optimizer: %s' % opt['optimizer'])
         
@@ -112,6 +122,7 @@ class DocReaderModel(object):
         # Train mode
         self.network.train()
 
+        
         #pdb.set_trace()
         # Transfer to GPU
         if self.opt['cuda']:
@@ -176,7 +187,8 @@ class DocReaderModel(object):
         loss.backward()
 
         # Clip gradients
-        torch.nn.utils.clip_grad_norm(self.network.parameters(), self.opt['grad_clipping'])
+        if self.opt['grad_clipping'] > 0:
+            torch.nn.utils.clip_grad_norm(self.network.parameters(), self.opt['grad_clipping'])            
 
         # Update parameters
         self.optimizer.step()

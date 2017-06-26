@@ -29,6 +29,7 @@ def main(opt):
         opt['kernels'] = eval(opt['kernels']) # convert string list of tuple --> list of tuple
 
     if opt['add_char2word']:
+        opt['NULLWORD_Idx_in_char'] = opt['vocab_size_char']-1
         opt['embedding_dim_TDNN']=0
         for i, n in enumerate(opt['kernels']):
             opt['embedding_dim_TDNN'] += n[1]
@@ -54,6 +55,7 @@ def main(opt):
     valid_time = Timer()
 
     # Sent prediction
+    pdb.set_trace()
     valid_world.agents[1].opt['ans_sent_predict'] = False
     valid_world.agents[1].model.network.opt['ans_sent_predict'] = False  # disable sentence predicction by default
     if opt['ans_sent_predict']:
@@ -68,9 +70,11 @@ def main(opt):
             f_predict.write(", ")
         nExample+=1
         #pdb.set_trace()
+
         f_predict.write('"' + valid_world.acts[0]['reward'] + '": ')
         temp_valid_word = valid_world.acts[1]['text'].replace("\"", "\\\"")
         f_predict.write('"' + temp_valid_word + '"')
+
         f_analysis.write('Paragraph & Question = ' + valid_world.acts[0]['text'] + '\n')
         f_analysis.write('Prediction = ' + valid_world.acts[1]['text'] + '\n')
         f_analysis.write('Answer = ' + valid_world.agents[0].lastY_prev[0] + '\n')
