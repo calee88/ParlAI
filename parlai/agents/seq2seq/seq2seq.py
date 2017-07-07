@@ -24,17 +24,17 @@ class Seq2seqAgent(Agent):
         DictionaryAgent.add_cmdline_args(argparser)
         agent = argparser.add_argument_group('Seq2Seq Arguments')
         agent.add_argument('-hs', '--hiddensize', type=int, default=64,
-            help='size of the hidden layers and embeddings')
+                           help='size of the hidden layers and embeddings')
         agent.add_argument('-nl', '--numlayers', type=int, default=2,
-            help='number of hidden layers')
+                           help='number of hidden layers')
         agent.add_argument('-lr', '--learningrate', type=float, default=0.5,
-            help='learning rate')
+                           help='learning rate')
         agent.add_argument('-dr', '--dropout', type=float, default=0.1,
-            help='dropout rate')
+                           help='dropout rate')
         agent.add_argument('--no-cuda', action='store_true', default=False,
-            help='disable GPUs even if available')
+                           help='disable GPUs even if available')
         agent.add_argument('--gpu', type=int, default=-1,
-            help='which GPU device to use')
+                           help='which GPU device to use')
 
     def __init__(self, opt, shared=None):
         super().__init__(opt, shared)
@@ -161,23 +161,37 @@ class Seq2seqAgent(Agent):
         loss = 0
         self.longest_label = max(self.longest_label, ys.size(1))
         for i in range(ys.size(1)):
-            output, hn = self.decoder(xes, hn)
-            preds, scores = self.hidden_to_idx(output, drop=True)
-            y = ys.select(1, i)
-            loss += self.criterion(scores, y)
-            # use the true token as the next input
-            xes = self.lt(y).unsqueeze(0)
-            # hn = self.dropout(hn)
-            for j in range(preds.size(0)):
-                token = self.v2t([preds.data[j][0]])
-                output_lines[j].append(token)
+            finished = False
+            restarted = False
+            while not finished:
+                if not restarted:
+                    output, hn = self.decoder(xes, hn)
+
+                try:
+                    preds, scores = self.hidden_to_idx(output, drop=True)
+                except:
+                    restarted = True
+                    loss.backward()
+                    loss = 0
+                    continue
+
+                y = ys.select(1, i)
+
+                loss += self.criterion(scores, y)
+                # use the true token as the next input
+                xes = self.lt(y).unsqueeze(0)
+                # hn = self.dropout(hn)
+                for j in range(preds.size(0)):
+                    token = self.v2t([preds.data[j][0]])
+                    output_lines[j].append(token)
+                finished = True
 
         loss.backward()
         self.update_params()
 
         if random.random() < 0.1:
             true = self.v2t(ys.data[0])
-            #print('loss:', round(loss.data[0], 2),
+            # print('loss:', round(loss.data[0], 2),
             #      ' '.join(output_lines[0]), '(true: {})'.format(true))
         return output_lines
 
@@ -202,7 +216,7 @@ class Seq2seqAgent(Agent):
         max_len = 0
         output_lines = [[] for _ in range(batchsize)]
 
-        while(total_done < batchsize) and max_len < self.longest_label:
+        while (total_done < batchsize) and max_len < self.longest_label:
             output, hn = self.decoder(xes, hn)
             preds, scores = self.hidden_to_idx(output, drop=False)
             xes = self.lt(preds.t())
