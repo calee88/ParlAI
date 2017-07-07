@@ -115,7 +115,14 @@ def main():
     impatience = 0
     saved = False
     while True:
-        world.parley()
+        try:
+            world.parley()
+        except ValueError as e:
+            if str(e) == 'max() arg is an empty sequence':
+                continue
+            else:
+                raise e
+
         parleys += 1
 
         if opt['num_epochs'] > 0 and parleys >= max_parleys:
