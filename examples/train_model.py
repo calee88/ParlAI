@@ -63,7 +63,8 @@ def run_eval(agent, opt, datatype, still_training=False, max_exs=-1):
             # full depending on the structure of the data
             break
     valid_world.shutdown()
-    valid_report = valid_world.report()
+    # valid_report = valid_world.report()
+    valid_report = agent.report()
 
     metrics = datatype + ':' + str(valid_report)
     print(metrics)
@@ -186,16 +187,17 @@ def main():
         if (opt['validation_every_n_secs'] > 0 and
                     validate_time.time() > opt['validation_every_n_secs']):
             valid_report = run_eval(agent, opt, 'valid', True, opt['validation_max_exs'])
-            if 'accuracy' in valid_report and valid_report['accuracy'] > best_accuracy:
-                best_accuracy = valid_report['accuracy']
+            criteria = 'loss'
+            if criteria in valid_report and valid_report[criteria] > best_accuracy:
+                best_accuracy = valid_report[criteria]
                 impatience = 0
-                print('[ new best accuracy: ' + str(best_accuracy) + ' ]')
+                print('[ new best ' + criteria + ': ' + str(best_accuracy) + ' ]')
                 if opt['model_file']:
                     agent.save(opt['model_file'])
                     saved = True
-                if best_accuracy == 1:
-                    print('[ task solved! stopping. ]')
-                    break
+                    # if best_accuracy == 1:
+                    #     print('[ task solved! stopping. ]')
+                    #     break
             else:
                 impatience += 1
                 print('[ did not beat best accuracy: {} impatience: {} ]'.format(

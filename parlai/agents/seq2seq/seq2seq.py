@@ -138,6 +138,9 @@ class Seq2seqAgent(Agent):
         self.episode_done = observation['episode_done']
         return observation
 
+    def report(self):
+        return self.report_dict
+
     def update(self, xs, ys):
         batchsize = len(xs)
 
@@ -159,6 +162,7 @@ class Seq2seqAgent(Agent):
         self.zero_grad()
         # update model
         loss = 0
+        self.report_loss = 0
         self.longest_label = max(self.longest_label, ys.size(1))
         for i in range(ys.size(1)):
             finished = False
@@ -172,6 +176,7 @@ class Seq2seqAgent(Agent):
                 except:
                     restarted = True
                     loss.backward()
+                    self.report_loss += loss.data[0]
                     loss = 0
                     continue
 
@@ -188,6 +193,10 @@ class Seq2seqAgent(Agent):
 
         loss.backward()
         self.update_params()
+        self.report_loss += loss.data[0]
+
+        self.report_dict = {}
+        self.report_dict['loss'] = self.report_loss / ys.size(0) / ys.size(1)
 
         if random.random() < 0.1:
             true = self.v2t(ys.data[0])
