@@ -196,7 +196,7 @@ class Seq2seqAgent(Agent):
         self.report_loss += loss.data[0]
 
         self.report_dict = {}
-        self.report_dict['loss'] = self.report_loss / ys.size(0) / ys.size(1)
+        self.report_dict['loss'] = -self.report_loss / ys.size(0) / ys.size(1)
 
         if random.random() < 0.1:
             true = self.v2t(ys.data[0])
