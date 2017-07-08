@@ -41,6 +41,7 @@ def run_eval(agent, opt, datatype, still_training=False, max_exs=-1):
     if opt.get('evaltask'):
         opt['task'] = opt['evaltask']
 
+    agent.opt['datatype'] = datatype
     valid_world = create_task(opt, agent)
     cnt = 0
     for _ in valid_world:
@@ -51,7 +52,7 @@ def run_eval(agent, opt, datatype, still_training=False, max_exs=-1):
                 continue
             else:
                 raise e
-            
+
         if cnt == 0 and opt['display_examples']:
             first_run = False
             print(valid_world.display() + '\n~~')
@@ -124,6 +125,7 @@ def main():
     impatience = 0
     saved = False
     while True:
+        agent.opt['datatype'] = 'train'
         try:
             world.parley()
         except ValueError as e:
@@ -184,7 +186,7 @@ def main():
         if (opt['validation_every_n_secs'] > 0 and
                     validate_time.time() > opt['validation_every_n_secs']):
             valid_report = run_eval(agent, opt, 'valid', True, opt['validation_max_exs'])
-            if valid_report['accuracy'] > best_accuracy:
+            if 'accuracy' in valid_report and valid_report['accuracy'] > best_accuracy:
                 best_accuracy = valid_report['accuracy']
                 impatience = 0
                 print('[ new best accuracy: ' + str(best_accuracy) + ' ]')

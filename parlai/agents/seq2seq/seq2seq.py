@@ -234,8 +234,10 @@ class Seq2seqAgent(Agent):
         return output_lines
 
     def batchify(self, obs):
-        exs = [ex for ex in obs if 'text' in ex and 'labels' in ex and ex['text'] != '']
-        valid_inds = [i for i, ex in enumerate(obs) if 'text' in ex and 'labels' in ex and ex['text'] != '']
+        exs = [ex for ex in obs if
+               'text' in ex and ex['text'] != '' and ('labels' in ex or self.opt['datatype'] != 'train')]
+        valid_inds = [i for i, ex in enumerate(obs) if
+                      'text' in ex and ex['text'] != '' and ('labels' in ex or self.opt['datatype'] != 'train')]
 
         batchsize = len(exs)
         parsed = [self.parse(ex['text']) for ex in exs]
