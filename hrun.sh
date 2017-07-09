@@ -68,7 +68,28 @@ case "$exp" in
 		;;
 	h13-fix-bi) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True  ## r-net, GatedAttentionRNN
 		;;
+###########################
+		## h13-fix-bi-ldecay
+###########################
 	h13-fix-bi-ldecay) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
+	;;
+	h13-fix-bi-ldecay-h75) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --hidden_size 75
+		;;
+	h13-fix-bi-ldecay-4) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0.4 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
+		;;
+	h13-fix-bi-ldecay-5) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.5 --dropout_emb 0.5 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
+		;;
+	h13-fix-bi-ldecay-2) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.2 --dropout_emb 0.2 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
+		;;
+	h13-fix-bi-ldecay-2-0) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.2 --dropout_emb 0 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
+		;;
+	h13-fix-bi-ldecay-3-0) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
+		;;
+	h13-fix-bi-ldecay-4-0) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True 
+		;;
+	h13-fix-bi-ldecay-s3435) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --random_seed 3435
+		;;
+	h13-fix-bi-ldecay-s8031) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --random_seed 8031 ## OOM
 		;;
 	h13-fix-bi-ldecay-pad) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --rnn_padding True
 		;;
@@ -77,6 +98,10 @@ case "$exp" in
 	h13-fix-bi-ldecay-gru2) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.2 --dropout_emb 0 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --rnn_type gru  ## OOM
 		;;
 	h13-fix-bi-ldecay-adam) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --learning_rate 0.0005 --optimizer adam # --train_interval 3368
+		;;
+	h13-fix-bi-ldecay-adam-clipx) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --learning_rate 0.0005 --optimizer adam --grad_clipping 0
+		;;
+	h13-fix-bi-ldecay-clipx) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --grad_clipping 0
 		;;
 	h13-fix-concat) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_concat True
 		;;
@@ -95,10 +120,29 @@ case "$exp" in
 		;;
 	h14-fix-2-lr) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --pp_bottleneck True --hidden_size 75 -bs 24
 		;;
-	h14-fix-bi) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --hidden_size 64 --rnn_type gru -bs 24  ## QP -> BI , PP -> UNI
+		#### AFTER PP update by GM
+	h14-bt-gt-rt) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True
+		;;
+	h14-bt-gt-rx) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_rnn False
 		;;
 	
-	#	h14-fix-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_concat True --pp_concat True
+	h14-bt-gt-rt-if) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False
+		;;
+	h14-bt256-gt-rt-if) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256
+		;;
+	h14-bt256-gt-rt-if-qpcat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --qp_concat True
+		;;
+	h14-bt256-gt-rt-if-ppcat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --pp_concat True
+		;;
+	h14-bt256-gt-rt-if-qpcat-ppcat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --qp_concat True --pp_concat True
+		;;
+	h14-bt128-gt-rt-if-qpcat-ppcat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 128 --qp_concat True --pp_concat True
+		;;
+	h14-bt256-gt-rt-if-qpcat-ppcat-bs64) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --qp_concat True --pp_concat True -bs 64
+		;;
+	h14-bt128-gt-rt-if-qpcat-ppcat-bs64) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 128 --qp_concat True --pp_concat True -bs 64
+		;;
+		#	h14-fix-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_concat True --pp_concat True
 #		;;
 #	h14-fix-bi-concat) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --qp_concat True --pp_birnn True --pp_concat True
 #		;;
@@ -109,7 +153,13 @@ case "$exp" in
 	;;
 	h15-fix-bi-ldecay-44-2) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --tune_partial 0 --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 -bs 20 
 	;;
-	
+
+	h15-bt256-gt-rt-if-qpcat-ppcat-chm) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --qp_concat True --pp_concat True --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 
+		;;
+	h15-bt256-gt-rt-if-qpcat-ppcat-chl) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256--qp_concat True --pp_concat True --add_char2word True --kernels '[(1, 15), (2, 20), (3, 35), (4, 40), (5, 75), (6, 90)]' --nLayer_Highway 1
+		;;
+
+
 	h15-fix-bi-ldecay-sent-char) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --tune_partial 0 --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 --ans_sent_predict True --hidden_size_sent 256 --coeff_ans_predict 0.01
 	;;
 	h15-fix-bi-ldecay-49) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --ans_sent_predict True --hidden_size_sent 256 --coeff_ans_predict 0.1  

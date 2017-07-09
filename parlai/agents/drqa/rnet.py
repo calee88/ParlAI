@@ -147,7 +147,8 @@ class RnnDocReader(nn.Module):
             qp_matched_size = qp_matched_size + doc_hidden_size        
  
         ## PP matching: 
-                
+        #pdb.set_trace()
+             
         opt['pp_rnn_size'] = qp_matched_size * 2
         if opt['pp_bottleneck']:
             opt['pp_rnn_size'] = opt['hidden_size_bottleneck']
@@ -160,14 +161,16 @@ class RnnDocReader(nn.Module):
             rnn_type=self.RNN_TYPES[opt['rnn_type']],
             birnn=opt['pp_birnn'],
             concat = opt['pp_concat'],
-            gate=False
+            gate=opt['pp_gate'], 
+            rnn=opt['pp_rnn'],
+            identity = ['pp_identity']
         )
         pp_matched_size = opt['pp_rnn_size']
-        if opt['pp_birnn']:
+        if opt['pp_birnn'] and opt['pp_rnn']:
             pp_matched_size = pp_matched_size * 2
         if opt['pp_concat']:
             pp_matched_size = pp_matched_size + qp_matched_size
- 
+                
         # Bilinear attention for span start/end
         if opt['task_QA']:
             self.start_attn = layers.BilinearSeqAttn(
@@ -238,6 +241,7 @@ class RnnDocReader(nn.Module):
                                      ques_len,
                                      max_wordL_q,
                                      -1)
+
             # Produce char-aware word embed
             x1_cw_emb = self.TDNN(x1_c_emb)  # N x Td x sum(H)
             x2_cw_emb = self.TDNN(x2_c_emb)  # N x Tq x sum(H)

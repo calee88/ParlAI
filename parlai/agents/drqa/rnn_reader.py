@@ -154,8 +154,6 @@ class RnnDocReader(nn.Module):
     #def forward(self, x1, x1_f, x1_mask, x2, x2_mask, x1_c=None, x2_c=None):  # for this version, we do not utilize mask for char
     def forward(self, x1, x1_f, x1_mask, x2, x2_mask, x1_c=None, x2_c=None, x1_sent_mask=None, word_boundary=None):  # for this version, we do not utilize mask for char
 
-        #pdb.set_trace()
-
         """Inputs:
         x1 = document word indices             [batch * len_d]
         x1_f = document word features indices  [batch * len_d * nfeat]
