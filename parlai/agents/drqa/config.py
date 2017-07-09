@@ -31,8 +31,9 @@ def add_cmdline_args(parser):
     parser.add_argument('--collect_garbage_every', type=int, default=20)
 
     # Vocabulary
-    parser.add_argument('--vocab_size', type=int, default=85629)
+    parser.add_argument('--vocab_size', type=int, default=-100)
     parser.add_argument('--vocab_size_char', type=int, default=100)
+    parser.add_argument('--vocab_size_generator', type=int, default=30000)
     parser.add_argument('--NULLWORD_Idx_in_char', type=int, default=-1)
     parser.add_argument('--add_char2word', type='bool', default=False)
     parser.add_argument('--qemb_with_wordonly', type='bool', default=False)
@@ -122,6 +123,8 @@ def add_cmdline_args(parser):
     parser.add_argument('--momentum', type=float, default=0,
                         help='Momentum (default 0)')
     parser.add_argument('--lrate_decay', type=bool, default=True,
+                        help='-----')
+    parser.add_argument('--lrate_decay_factor', type=float, default=0.5,
                         help='-----')
 
     # Model-specific
