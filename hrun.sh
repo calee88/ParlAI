@@ -154,12 +154,28 @@ case "$exp" in
 	h15-fix-bi-ldecay-44-2) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --tune_partial 0 --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 -bs 20 
 	;;
 
-	h15-bt256-gt-rt-if-qpcat-ppcat-chm) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --qp_concat True --pp_concat True --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 
+	h15-bt256-gt-rt-if-chm) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --hidden_size 128 --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 
 		;;
-	h15-bt256-gt-rt-if-qpcat-ppcat-chl) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256--qp_concat True --pp_concat True --add_char2word True --kernels '[(1, 15), (2, 20), (3, 35), (4, 40), (5, 75), (6, 90)]' --nLayer_Highway 1
+	h15-bt256-gt-rt-if-chl) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 256 --hidden_size 128 --add_char2word True --kernels '[(1, 15), (2, 20), (3, 35), (4, 40), (5, 75), (6, 90)]' --nLayer_Highway 1
+		;;
+	h15-bt-gt-rt-if-qpcat-ppcat-chs) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 128 --add_char2word True --kernels '[(1, 5), (2, 10), (3, 15), (4, 20), (5, 25), (6, 30)]' --nLayer_Highway 1
+		;;
+	h15-bt75-gt-rt-if-qpcat-ppcat-chs) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 75 --hidden_size 75 --add_char2word True --kernels '[(1, 5), (2, 10), (3, 15), (4, 20), (5, 25), (6, 30)]' --nLayer_Highway 1
+		;;
+
+	h15-bt-gt-rt-if-chs-lx) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 128 --add_char2word True --kernels '[(1, 5), (2, 10), (3, 15), (4, 20), (5, 25), (6, 30)]' --nLayer_Highway 1 --lrate_decay False --train_interval 1000
+		;;
+	h15-bt75-gt-rt-if-chs-lx) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 75 --hidden_size 75 --add_char2word True --kernels '[(1, 5), (2, 10), (3, 15), (4, 20), (5, 25), (6, 30)]' --nLayer_Highway 1 --lrate_decay False --train_interval 1000
+		;;
+
+	h15-bt-gt-rt-if-chs-lx2) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 128 --add_char2word True --kernels '[(1, 5), (2, 10), (3, 15), (4, 20), (5, 25), (6, 30)]' --nLayer_Highway 1 --lrate_decay False --train_interval 1000
+		;;
+	h15-bt75-gt-rt-if-chs-lx2) python $script -t squad --net rnet --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --pp_bottleneck True --pp_gate True --pp_identity False --hidden_size_bottleneck 75 --hidden_size 75 --add_char2word True --kernels '[(1, 5), (2, 10), (3, 15), (4, 20), (5, 25), (6, 30)]' --nLayer_Highway 1 --lrate_decay False --train_interval 1000
 		;;
 
 
+
+		
 	h15-fix-bi-ldecay-sent-char) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.4 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --tune_partial 0 --add_char2word True --kernels '[(5,200)]' --nLayer_Highway 1 --ans_sent_predict True --hidden_size_sent 256 --coeff_ans_predict 0.01
 	;;
 	h15-fix-bi-ldecay-49) python $script -t squad --model_file $exp_dir/exp$exp --embedding_file $emb --dropout_rnn 0.3 --dropout_emb 0.3 --gpu $gpuid --qp_bottleneck True --qp_birnn True --lrate_decay True --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --ans_sent_predict True --hidden_size_sent 256 --coeff_ans_predict 0.1  

@@ -193,6 +193,7 @@ def main(opt):
     impatience = 0
     lrate_decay = 0
 
+    pdb.set_trace()
     logger.info("[ Ok, let's go... ]")
     iteration = 0
     while impatience < opt['patience']:
