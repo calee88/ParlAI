@@ -1,3 +1,6 @@
+# exp files
+exp-*/
+
 # MISC
 *.tmp
 
@@ -109,5 +112,5 @@ tmp/
 # PyCharm
 .idea
 
-# Experiment
-exp
+# Experiments
+exp*

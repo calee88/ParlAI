@@ -12,6 +12,7 @@ import json
 import random
 import os
 
+import pdb
 
 class HandwrittenTeacher(Teacher):
     """Hand-written SQuAD teacher, which loads the json squad data and
@@ -61,6 +62,7 @@ class HandwrittenTeacher(Teacher):
 
     def _setup_data(self, path):
         print('loading: ' + path)
+        #pdb.set_trace()
         with open(path) as data_file:
             self.squad = json.load(data_file)['data']
         self.len = 0
@@ -72,6 +74,7 @@ class HandwrittenTeacher(Teacher):
                 num_questions = len(paragraph['qas'])
                 self.len += num_questions
                 for qa_idx in range(num_questions):
+                    #pdb.set_trace()
                     self.examples.append((article_idx, paragraph_idx, qa_idx))
 
 
@@ -85,18 +88,25 @@ class DefaultTeacher(DialogTeacher):
 
     def __init__(self, opt, shared=None):
         self.datatype = opt['datatype']
+        self.opt = opt
         build(opt)
         if opt['datatype'].startswith('train'):
             suffix = 'train'
         else:
             suffix = 'dev'
-        opt['datafile'] = os.path.join(opt['datapath'], 'SQuAD',
-                                       suffix + '-v1.1.json')
+        # SQuAD
+        #opt['datafile'] = os.path.join(opt['datapath'], 'SQuAD', suffix + '-v1.1.json')
+
+        # MS marco
+        opt['datafile'] = os.path.join(opt['datapath'], 'MSmarco', suffix + '_py.json')
         self.id = 'squad'
         super().__init__(opt, shared)
 
+    # SQuAD
+    """
     def setup_data(self, path):
         print('loading: ' + path)
+        #pdb.set_trace()
         with open(path) as data_file:
             self.squad = json.load(data_file)['data']
         for article in self.squad:
@@ -106,5 +116,58 @@ class DefaultTeacher(DialogTeacher):
                 for qa in paragraph['qas']:
                     question = qa['question']
                     answers = (a['text'] for a in qa['answers'])
+                    answer_start = [a['answer_start'] for a in qa['answers']]  # for extracting answer_start
                     context = paragraph['context']
-                    yield (context + '\n' + question, answers), True
+                    #pdb.set_trace()
+                    if self.opt['datatype']=='train':
+                        if self.opt['ans_sent_predict']:
+                            yield (context + '\n' + question, answers, answer_start), True  # include answer_start
+                        else:
+                            yield (context + '\n' + question, answers), True
+
+                    else:  # for making valid predictions.json
+                        uid = qa['id']
+                        if self.opt['ans_sent_predict']:
+                            yield (context + '\n' + question, answers, answer_start, uid), True # include answer_start
+                        else:
+                            yield (context + '\n' + question, answers, uid), True
+    """
+
+    # MS marco
+    def setup_data(self, path):
+        print('loading: ' + path)
+        #pdb.set_trace()
+        with open(path) as data_file:
+            self.msmarco = json.load(data_file)['data']
+        for article in self.msmarco:
+            # each paragraph is a context for the attached questions
+            question = article['query']
+            answers = article['answers']   # What if there is no answer?
+            if(len(answers) >= 1):
+                answers = answers[0]
+            else:   # no answers
+                #answers = ''
+                continue  # Skip these examples for now
+
+
+            nParagraph = len(article['passages'])
+            query_id = article['query_id']
+            selected_passage = -100 # default value
+            for i in range(nParagraph):
+                if(article['passages'][i]['is_selected']):
+                    selected_passage = i
+                    break
+
+            if(selected_passage == -100):  # no passage is selected --> Skip these examples for now
+                continue
+
+            #print('selected_passage = ' + str(selected_passage) + '/' + str(nParagraph))
+            #pdb.set_trace()
+
+            context = article['passages'][selected_passage]['passage_text']
+
+            if self.opt['datatype']=='train':
+                yield (context + '\n' + question, answers), True
+
+            else:  # for making valid predictions.json
+                yield (context + '\n' + question, answers, query_id), True

@@ -5,12 +5,12 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 from parlai.core.agents import Agent
-from parlai.core.dict import DictionaryAgent
 
 from torch.autograd import Variable
 from torch import optim
 import torch.nn as nn
 import torch
+
 import copy
 import os
 import random
@@ -50,6 +50,9 @@ class Seq2seqAgent(Agent):
             self.EOS = self.dict.eos_token
             self.observation = {'text': self.EOS, 'episode_done': True}
             self.EOS_TENSOR = torch.LongTensor(self.dict.parse(self.EOS))
+
+            self.id = 'Seq2Seq'
+            hsz = opt['hiddensize']
             self.hidden_size = hsz
             self.num_layers = opt['numlayers']
             self.learning_rate = opt['learningrate']
@@ -72,6 +75,7 @@ class Seq2seqAgent(Agent):
                 'decoder': optim.SGD(self.decoder.parameters(), lr=lr),
                 'd2o': optim.SGD(self.d2o.parameters(), lr=lr),
             }
+
             if self.use_cuda:
                 self.cuda()
             if opt.get('model_file') and os.path.isfile(opt['model_file']):

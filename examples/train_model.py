@@ -6,7 +6,6 @@
 '''Train a model.
 
 After training, computes validation and test error.
-
 Run with, e.g.:
 
 python examples/train_model.py -m ir_baseline -t dialog_babi:Task:1 -mf '/tmp/model'

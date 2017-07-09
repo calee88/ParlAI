@@ -8,11 +8,63 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+import numpy as np
+
+import pdb
+
+#torch.backends.cudnn.enabled=False
 
 # ------------------------------------------------------------------------------
 # Modules
 # ------------------------------------------------------------------------------
 
+
+class Selective_Meanpool(nn.Module):
+    def __init__(self, input_size):
+        super(Selective_Meanpool, self).__init__()
+        self.input_size = input_size
+
+    def forward(self, x, word_end):
+        """Mean pool across word boundary."""
+
+        # x : N x Tword x H (32 x 500 x 768)
+        # word_end : word end index of each paragraph, list
+
+        nBatch = len(word_end)
+        maxSent = len(max(word_end, key=len))
+
+        outputs = []
+
+        #pdb.set_trace()
+        for n in range(nBatch):
+            outputs_batch = []
+            startend = np.insert(word_end[n], 0, -1)
+            nSentence = len(startend)-1
+
+            #start_idx = Variable(torch.from_numpy(startend[:-1]) + 1)  # Variable,
+            #end_idx = Variable(torch.from_numpy(startend[1:]) )         # Variable
+
+            start_idx = startend[:-1] + 1  # numpy.array
+            end_idx = startend[1:] # numpy.array
+
+            for s in range(nSentence):
+                end_idx_real = end_idx[s]+1
+                if end_idx_real < 0 :
+                    end_idx_real = x.size()[1]
+                meanpool_idx = torch.from_numpy(np.arange(start_idx[s], end_idx_real))
+                meanpool_idx = Variable(meanpool_idx.cuda(async=True))
+                outputs_batch.append(torch.mean(x[n,:, :].index_select(0, meanpool_idx),0))
+
+            if nSentence < maxSent:  # zero tensor padding
+                outputs_batch.append(Variable(torch.zeros(maxSent-nSentence, x.size()[-1]).cuda(async=True), requires_grad=False))
+
+            outputs_batch_tensor = torch.cat(outputs_batch, 0)
+            outputs.append(outputs_batch_tensor)
+
+        #pdb.set_trace()
+        output = torch.stack(outputs, 0)
+
+        return output
 
 class StackedBRNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers,
@@ -35,6 +87,7 @@ class StackedBRNN(nn.Module):
         """Can choose to either handle or ignore variable length sequences.
         Always handle padding in eval.
         """
+
         # No padding necessary.
         if x_mask.data.sum() == 0:
             return self._forward_unpadded(x, x_mask)
@@ -46,6 +99,9 @@ class StackedBRNN(nn.Module):
 
     def _forward_unpadded(self, x, x_mask):
         """Faster encoding that ignores any padding."""
+
+        #pdb.set_trace()
+
         # Transpose batch and sequence dims
         x = x.transpose(0, 1)
 
@@ -82,6 +138,7 @@ class StackedBRNN(nn.Module):
     def _forward_padded(self, x, x_mask):
         """Slower (significantly), but more precise,
         encoding that handles padding."""
+
         # Compute sorted sequence lengths
         lengths = x_mask.data.eq(0).long().sum(1).squeeze()
         _, idx_sort = torch.sort(lengths, dim=0, descending=True)
@@ -156,6 +213,7 @@ class SeqAttnMatch(nn.Module):
         Output shapes:
             matched_seq = batch * len1 * h
         """
+        #pdb.set_trace()
         # Project vectors
         if self.linear:
             x_proj = self.linear(x.view(-1, x.size(2))).view(x.size())
@@ -201,6 +259,7 @@ class BilinearSeqAttn(nn.Module):
         y = batch * h2
         x_mask = batch * len
         """
+        #pdb.set_trace()
         Wy = self.linear(y) if self.linear is not None else y
         xWy = x.bmm(Wy.unsqueeze(2)).squeeze(2)
         xWy.data.masked_fill_(x_mask.data, -float('inf'))
@@ -231,6 +290,178 @@ class LinearSeqAttn(nn.Module):
         scores.data.masked_fill_(x_mask.data, -float('inf'))
         alpha = F.softmax(scores)
         return alpha
+
+
+class GatedAttentionBilinearRNN(nn.Module):
+    """Given sequences X and Y, match sequence Y to each element in X.  --- eq(4) in r-net
+    (X=passage u^P,  Y=Question u^Q)    
+    * alpha^t_i = softmax(u^Q_j * Wu * u^P_i)
+    * c_t = sum(alpha^t_i * u^Q_i) for i in X
+    * gated[u^P_t, c_t] = sigmoid(W_g * [u^P_t, c_t])
+    * v^P_t = RNN(v^P_(t-1), gated[u^P_t, c_t])
+    """    
+        
+    def __init__(self, x_size, y_size, hidden_size,
+                 rnn_type=nn.LSTM,
+                 gate=True, padding = False,
+                 birnn=False, identity=False, concat=False, rnn=True):
+        super(GatedAttentionBilinearRNN, self).__init__()
+        self.num_layers = 1
+        self.hidden_size = hidden_size
+        self.padding = padding
+        self.concat_layers = concat
+
+        #pdb.set_trace()
+
+        if not identity:
+            self.linear = nn.Linear(y_size, x_size, bias=False)
+        else:
+            self.linear = None
+        
+        self.gate = gate
+        if self.gate:
+            self.gate_layer = nn.Sequential(
+                nn.Linear(y_size + x_size, 1, bias=False ),  # the 2nd hidden_size can be different from 'hidden_size'
+                nn.Sigmoid())
+        
+        if not (hidden_size == (x_size+y_size)):
+            #self.bottleneck_layer = nn.Sequential(nn.Linear(y_size + x_size, hidden_size),
+                                                  #nn.ReLU())
+            self.bottleneck_layer = nn.Linear(y_size + x_size, hidden_size)
+            input_size = hidden_size
+        else:
+            self.bottleneck_layer = None
+            input_size = y_size + x_size
+        
+        self.rnn = rnn 
+        if self.rnn:
+            self.rnns = nn.ModuleList()
+            self.rnns.append(rnn_type(input_size, hidden_size,
+                                      num_layers=1, bidirectional=birnn))
+        
+
+    def forward(self,  x, x_mask, y, y_mask):
+        """Can choose to either handle or ignore variable length sequences.
+        Always handle padding in eval.
+        """
+        # No padding necessary.
+        if x_mask.data.sum() == 0:
+            return self._forward_unpadded(x, x_mask, y, y_mask)
+        # Pad if we care or if its during eval.
+        if self.padding or not self.training:
+            return self._forward_padded(x, x_mask, y, y_mask)
+        #    return self._forward_unpadded(x, x_mask, y, y_mask)
+        
+        # We don't care.
+        return self._forward_unpadded(x, x_mask, y, y_mask)
+    
+    def _gated_attended_input(self, x, x_mask, y, y_mask):
+        nbatch = x.size(0) #(batch, seq_len, input_size)
+        x_len = x.size(1)
+        y_len = y.size(1)        
+        x_size = x.size(2)
+        y_size = y.size(2)
+        
+        #tic = time.time()    
+
+        # Attention
+        # * alpha^t_i = softmax(tanh( u^Q_j * W * u^P_i ))
+        # * c_t = sum(alpha^t_i * u^Q_i) for i in X
+        #pdb.set_trace()
+        Wy = self.linear(y.view(-1, y_size)).view(-1, y_len, x_size) if self.linear is not None else y
+        xWy = x.bmm(Wy.transpose(1,2))
+        xWy.data.masked_fill_(y_mask.data.unsqueeze(1).expand_as(xWy), -float('inf'))
+        alpha = F.softmax(xWy.view(-1, y_len))
+
+        # Ver1 (Problem : .repeat())
+        #pdb.set_trace()
+        #alpha = alpha.view(alpha.size(0), 1, y_len)
+        #attend_y = alpha.bmm(y.unsqueeze(1).repeat(1,x_len,1,1).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)         # HR ver1
+
+        # Ver2 -- get exactly same value as Ver1
+        alpha = alpha.view(nbatch, x_len, y_len)
+        attend_y = alpha.bmm(y)
+
+        #pdb.set_trace()
+
+        attend_y.data.masked_fill_(x_mask.unsqueeze(2).expand_as(attend_y).data, 0) ## comment out?
+        rnn_input = torch.cat((x, attend_y), 2)
+
+        # Gate: gated[u^P_t, c_t] = sigmoid(W_g * [u^P_t, c_t])
+        if self.gate:
+            gate = self.gate_layer(rnn_input.view(-1, rnn_input.size(2))).view(nbatch, x_len, 1).expand_as(rnn_input) #1, 1, rnn_input.size(2))
+            rnn_input = gate.mul(rnn_input)
+        
+        # 128*3 *2= 1536 ==> too large as an RNN input? then insert a bottle neck layer 
+        rnn_input = self.bottleneck_layer(rnn_input.view(-1, rnn_input.size(2))).view(nbatch, x_len, -1) if self.bottleneck_layer is not None else rnn_input        
+        
+        return rnn_input
+        
+    def _forward_unpadded(self,  x, x_mask, y, y_mask):
+        """Faster encoding that ignores any padding."""
+        # Encode all layers
+        output = self._gated_attended_input(x, x_mask, y, y_mask)
+#        pdb.set_trace()
+        if self.rnn:
+            outputs = [output] 
+            for i in range(self.num_layers): ## self.num_layers == 1
+                # RNN: v^P_t = RNN(v^P_(t-1), gated[u^P_t, c_t])   
+                rnn_output = self.rnns[i](outputs[-1].transpose(0,1))[0] # batch_first = False
+                outputs.append(rnn_output)
+                output = outputs[1].transpose(0,1)
+            
+       # Concat hidden layers
+        if self.concat_layers:
+            output = torch.cat((output, x), 2)
+            
+        return output
+
+    def _forward_padded(self,  x, x_mask, y, y_mask):
+        """Slower (significantly), but more precise,
+        encoding that handles padding."""
+        # Compute sorted sequence lengths
+        lengths = x_mask.data.eq(0).long().sum(1).squeeze()
+        _, idx_sort = torch.sort(lengths, dim=0, descending=True)
+        _, idx_unsort = torch.sort(idx_sort, dim=0)
+
+        lengths = list(lengths[idx_sort])
+        idx_sort = Variable(idx_sort)
+        idx_unsort = Variable(idx_unsort)
+        
+
+        input = self._gated_attended_input(x, x_mask, y, y_mask)
+        
+        if self.rnn:
+            # Sort x
+            input = input.index_select(0, idx_sort)
+    
+            # Transpose batch and sequence dims
+            input = input.transpose(0, 1)
+    
+            # Pack it up
+            rnn_input = nn.utils.rnn.pack_padded_sequence(input, lengths)
+    
+            # Encode all layers
+            outputs = [rnn_input]
+            for i in range(self.num_layers):
+                rnn_input = outputs[-1]
+                outputs.append(self.rnns[i](rnn_input)[0])
+    
+            # Unpack everything
+            for i, o in enumerate(outputs[1:], 1):
+                outputs[i] = nn.utils.rnn.pad_packed_sequence(o)[0]
+
+            # Transpose and unsort
+            output = outputs[1].transpose(0, 1)
+            output = output.index_select(0, idx_unsort)
+        else:
+            output = input
+        
+        # Concat hidden layers or take final
+        if self.concat_layers:
+            output = torch.cat((output, x), 2)
+            
+        return output
 
 
 # ------------------------------------------------------------------------------

@@ -11,7 +11,10 @@ import logging
 
 from torch.autograd import Variable
 from .utils import load_embeddings, AverageMeter
-from .rnn_reader import RnnDocReader
+#from .rnn_reader import RnnDocReader
+
+
+import pdb
 
 logger = logging.getLogger('DrQA')
 
@@ -21,16 +24,43 @@ class DocReaderModel(object):
     architecture, saving, updating examples, and predicting examples.
     """
 
-    def __init__(self, opt, word_dict, feature_dict, state_dict=None):
+    def __init__(self, opt, word_dict, char_dict, feature_dict, state_dict=None):
+
+        #Cudnn
+        #if not opt['use_cudnn']:
+        #    torch.backends.cudnn.enabled=False
+
         # Book-keeping.
         self.opt = opt
         self.word_dict = word_dict
+        self.char_dict = char_dict
         self.feature_dict = feature_dict
         self.updates = 0
         self.train_loss = AverageMeter()
+        self.train_loss_QA = AverageMeter()
+        self.train_loss_sentpredict = AverageMeter()
+
+       #pdb.set_trace()
+
+        self.input_idx_bdy=5
+        self.target_idx_start=5
+        if opt['add_char2word']:
+            self.input_idx_bdy += 2  # x1_c, x2_c
+            self.target_idx_start += 2
+
+        if opt['ans_sent_predict']:
+            self.input_idx_bdy += 1  # x1_sent_mask
+            self.target_idx_start += 3
 
         # Building network.
+        if opt['net'] == 'rnn_reader':
+            from .rnn_reader import RnnDocReader
+        elif opt['net'] == 'rnet_qp':
+            from .rnet_qp import RnnDocReader
+        elif opt['net'] == 'rnet':
+            from .rnet import RnnDocReader
         self.network = RnnDocReader(opt)
+        
         if state_dict:
             new_state = set(self.network.state_dict().keys())
             for k in list(state_dict['network'].keys()):
@@ -46,10 +76,18 @@ class DocReaderModel(object):
                                        weight_decay=opt['weight_decay'])
         elif opt['optimizer'] == 'adamax':
             self.optimizer = optim.Adamax(parameters,
-                                          weight_decay=opt['weight_decay'])
+                                          weight_decay=opt['weight_decay'],
+                                          lr=self.opt['learning_rate'])
+        elif self.opt['optimizer'] == 'adam':
+            self.optimizer = optim.Adam(parameters,
+                                          weight_decay=self.opt['weight_decay'], 
+                                          lr=self.opt['learning_rate'])
         else:
             raise RuntimeError('Unsupported optimizer: %s' % opt['optimizer'])
-
+        
+    def set_lrate(self, lrate):
+        self.optimizer.param_groups[0]['lr']=lrate      
+        
     def set_embeddings(self):
         # Read word embeddings.
         if not self.opt.get('embedding_file'):
@@ -84,33 +122,69 @@ class DocReaderModel(object):
         # Train mode
         self.network.train()
 
+        
+        #pdb.set_trace()
         # Transfer to GPU
         if self.opt['cuda']:
-            inputs = [Variable(e.cuda(async=True)) for e in ex[:5]]
-            target_s = Variable(ex[5].cuda(async=True))
-            target_e = Variable(ex[6].cuda(async=True))
+            pdb.set_trace()
+            inputs = [Variable(e.cuda(async=True)) for e in ex[:self.input_idx_bdy]]
+            targets = [Variable(e.cuda(async=True)) for e in ex[self.input_idx_bdy:self.input_idx_bdy+2]]
+
         else:
-            inputs = [Variable(e) for e in ex[:5]]
-            target_s = Variable(ex[5])
-            target_e = Variable(ex[6])
+            inputs = [Variable(e) for e in ex[:self.input_idx_bdy]]
+            targets = [Variable(e) for e in ex[self.input_idx_bdy:self.input_idx_bdy+2]]
+
+        #pdb.set_trace()
+
+        if self.opt['ans_sent_predict']:
+            inputs = inputs + [ex[self.input_idx_bdy]]
+            target_sent = Variable(torch.from_numpy(np.asarray(ex[self.input_idx_bdy+1])).cuda(async=True))
 
         # Run forward
-        score_s, score_e = self.network(*inputs)
+        #pdb.set_trace()
+        score_list = self.network(*inputs)
 
-        # Compute loss and accuracies
-        loss = F.nll_loss(score_s, target_s) + F.nll_loss(score_e, target_e)
+        if len(score_list) == 3:
+            score_s = score_list[0] 
+            score_e = score_list[1]
+            score_sent = score_list[2]
+        elif len(score_list) == 2:
+            score_s = score_list[0]
+            score_e = score_list[1]
+        elif len(score_list) == 1:
+            score_sent = score_list[0]
+
+        # Define computation graph for multi-task learning
+        if self.opt['task_QA'] and not self.opt['ans_sent_predict']:
+            loss_QA = F.nll_loss(score_s, target_s) + F.nll_loss(score_e, target_e)
+            loss = loss_QA
+        elif self.opt['ans_sent_predict'] and self.opt['task_QA']:
+            loss_QA = F.nll_loss(score_s, target_s) + F.nll_loss(score_e, target_e)
+            loss_sent = F.nll_loss(score_sent, target_sent)
+            loss = loss_QA + self.opt['coeff_ans_predict']*loss_sent
+            self.train_loss_QA.update(loss_QA.data[0], ex[0].size(0))
+            self.train_loss_sentpredict.update(loss_sent.data[0], ex[0].size(0))
+
+        # Update
+        #pdb.set_trace()
         self.train_loss.update(loss.data[0], ex[0].size(0))
 
         # Clear gradients and run backward
         self.optimizer.zero_grad()
+
+        #if self.opt['ans_sent_predict']:
+            #loss.backward(retain_variables=True)  # since we define multi-task learning graph, we don't have to do retain_variables
+        #else:
+
         loss.backward()
 
         # Clip gradients
-        torch.nn.utils.clip_grad_norm(self.network.parameters(),
-                                      self.opt['grad_clipping'])
+        if self.opt['grad_clipping'] > 0:
+            torch.nn.utils.clip_grad_norm(self.network.parameters(), self.opt['grad_clipping'])            
 
         # Update parameters
         self.optimizer.step()
+
         self.updates += 1
 
         # Reset any partially fixed parameters (e.g. rare words)
@@ -120,15 +194,20 @@ class DocReaderModel(object):
         # Eval mode
         self.network.eval()
 
+        #pdb.set_trace()
         # Transfer to GPU
         if self.opt['cuda']:
-            inputs = [Variable(e.cuda(async=True), volatile=True)
-                      for e in ex[:5]]
+            inputs = [Variable(e.cuda(async=True)) for e in ex[:self.input_idx_bdy]]
         else:
-            inputs = [Variable(e, volatile=True) for e in ex[:5]]
+            inputs = [Variable(e) for e in ex[:self.input_idx_bdy]]
 
         # Run forward
-        score_s, score_e = self.network(*inputs)
+        #pdb.set_trace()
+        score_list = self.network(*inputs)
+
+        score_s = score_list[0]
+        score_e = score_list[1]
+
 
         # Transfer to CPU/normal tensors for numpy ops
         score_s = score_s.data.cpu()
@@ -163,6 +242,7 @@ class DocReaderModel(object):
                 'network': self.network.state_dict(),
             },
             'word_dict': self.word_dict,
+            'char_dict': self.char_dict,
             'feature_dict': self.feature_dict,
             'config': self.opt,
         }

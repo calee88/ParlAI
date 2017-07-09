@@ -4,15 +4,17 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 import torch
+from torch.autograd import Variable
 import time
 import unicodedata
 from collections import Counter
 
-
+import numpy as np
 # ------------------------------------------------------------------------------
 # Data/model utilities.
 # ------------------------------------------------------------------------------
 
+import pdb
 
 def normalize_text(text):
     return unicodedata.normalize('NFD', text)
@@ -61,13 +63,45 @@ def build_feature_dict(opt):
 # ------------------------------------------------------------------------------
 
 
-def vectorize(opt, ex, word_dict, feature_dict):
+#def vectorize(opt, ex, word_dict, feature_dict):
+def vectorize(opt, ex, word_dict, char_dict, feature_dict, gen_dict):
     """Turn tokenized text inputs into feature vectors."""
+
+    #pdb.set_trace()
+
     # Index words
     document = torch.LongTensor([word_dict[w] for w in ex['document']])
     question = torch.LongTensor([word_dict[w] for w in ex['question']])
 
-    # Create extra features vector
+    if(isinstance(ex['target'][0], str)): # MS marco
+        target = torch.LongTensor([gen_dict[w] for w in ex['target']])
+
+    # Index words with character-level tensor
+    T_doc = len(ex['document'])
+    T_ques = len(ex['question'])
+
+    #print ("T_docs = ", T_doc, ", T_ques = ", T_ques)
+
+    #document_char = np.array(
+#        [list(map(encode_characters(w, char_dict, opt['max_word_len'], 0))) for w in ex['document']])  # 0 = NULLIdx
+#    question_char = np.array(
+#        [list(map(encode_characters(w, char_dict, opt['max_word_len'], 0))) for w in ex['question']])  # 0 = NULLIdx
+
+    document_char=None
+    question_char=None
+    if opt['add_char2word']:
+        document_char = np.array(
+            [encode_characters(w, char_dict, opt['max_word_len'], 0) for w in ex['document']])  # 0 = NULLIdx
+        question_char = np.array(
+            [encode_characters(w, char_dict, opt['max_word_len'], 0) for w in ex['question']])  # 0 = NULLIdx
+
+        document_char = [torch.from_numpy(var) for var in document_char]
+        document_char = [var.long() for var in document_char]
+
+        question_char = [torch.from_numpy(var) for var in question_char]
+        question_char = [var.long() for var in question_char]
+
+   # Create extra features vector
     features = torch.zeros(len(ex['document']), len(feature_dict))
 
     # f_{exact_match}
@@ -94,35 +128,70 @@ def vectorize(opt, ex, word_dict, feature_dict):
         def _full_stop(w):
             return w in {'.', '?', '!'}
         for i, w in reversed(list(enumerate(ex['document']))):
-            sent_idx = sent_idx + 1 if _full_stop(w) else max(sent_idx, 1)
+            sent_idx  = sent_idx + 1 if _full_stop(w) else max(sent_idx, 1)
             if sent_idx < opt['use_time']:
                 features[i][feature_dict['time=T%d' % sent_idx]] = 1.0
             else:
                 features[i][feature_dict['time>=T%d' % opt['use_time']]] = 1.0
 
+    #pdb.set_trace()
+
     # Maybe return without target
     if ex['target'] is None:
-        return document, features, question
+        if opt['add_char2word']:
+            return document, features, question, document_char, question_char
+        else:
+            return document, features, question
 
-    # ...or with target
-    start = torch.LongTensor(1).fill_(ex['target'][0])
-    end = torch.LongTensor(1).fill_(ex['target'][1])
-
-    return document, features, question, start, end
+    return document, features, question, target
 
 
-def batchify(batch, null=0, cuda=False):
+#def batchify(batch, null=0, cuda=False):
+def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False, use_char=False, sent_predict=False):
     """Collate inputs into batches."""
-    NUM_INPUTS = 3
-    NUM_TARGETS = 2
+
+    NUM_INPUTS = 2 # doc(word) + feature
+
+    n_word_idx=0
+    n_sent_label=0
+    if sent_predict:
+        NUM_INPUTS += 2
+        n_word_idx+=3
+        n_sent_label+=4
+    if use_char:
+        NUM_INPUTS += 2
+        n_doc_char=3
+        n_ques_char=4
+        n_word_idx+=2
+        n_sent_label+=2
+        
+    NUM_TARGETS = 2  # Target matrix + Target mask matrix
     NUM_EXTRA = 2
 
     # Get elements
+    #pdb.set_trace()
     docs = [ex[0] for ex in batch]
     features = [ex[1] for ex in batch]
     questions = [ex[2] for ex in batch]
+    targets = [ex[3] for ex in batch]
+    if use_char:
+        docs_char = [ex[n_doc_char] for ex in batch]
+        ques_char = [ex[n_ques_char] for ex in batch]
+    if sent_predict:
+        word_idx = [ex[n_word_idx] for ex in batch]
+        sent_label= [ex[n_sent_label] for ex in batch]
+
     text = [ex[-2] for ex in batch]
     spans = [ex[-1] for ex in batch]
+
+    # Batch target matrix
+    max_length = max([t.size(0) for t in targets])
+    target_mat = torch.LongTensor(len(targets), max_length).fill_(null)
+    target_mask_mat = torch.LongTensor(len(targets), max_length).fill_(1)
+    for i, t in enumerate(targets):
+        target_mat[i, :t.size(0)].copy_(t)
+        target_mask_mat[i, :t.size(0)].fill_(0)
+
 
     # Batch documents and features
     max_length = max([d.size(0) for d in docs])
@@ -134,13 +203,49 @@ def batchify(batch, null=0, cuda=False):
         x1_mask[i, :d.size(0)].fill_(0)
         x1_f[i, :d.size(0)].copy_(features[i])
 
+    # pdb.set_trace()
+
+    # x1_sent_mask
+    if sent_predict:
+        #print(word_idx)
+        maxSent = len(max(word_idx, key=len))
+        lenSent = [len(l) for l in word_idx]
+        x1_sent_mask = torch.ByteTensor(len(docs),maxSent ).fill_(1)
+        for n in range(len(docs)):
+            #print(lenSent[n])
+            x1_sent_mask[n, :lenSent[n]].fill_(0)
+
+
+    # Batch document with character level encoding
+    if use_char:
+        x1_c = torch.LongTensor(len(docs), max_length, max_word_len).fill_(null)
     # Batch questions
+        for i in range(len(docs_char)):  # Iterate over documents
+            for j in range(len(docs_char[i])):  # Iterate over words
+                #print('(i,j) = (', i, ', ', j, ')')
+                #print(docs_char[i][j].size())
+                x1_c[i, j, :docs_char[i][j].size(0)].copy_(docs_char[i][j])
+            if(len(docs_char[i]) < max_length):
+                x1_c[i, len(docs_char[i]):, 0].fill_(NULLWORD_Idx_in_char)  # fill <NULL_WORD>
+
     max_length = max([q.size(0) for q in questions])
     x2 = torch.LongTensor(len(questions), max_length).fill_(null)
     x2_mask = torch.ByteTensor(len(questions), max_length).fill_(1)
     for i, q in enumerate(questions):
         x2[i, :q.size(0)].copy_(q)
         x2_mask[i, :q.size(0)].fill_(0)
+
+
+    # Batch question with character level encoding
+    if use_char:
+        x2_c = torch.LongTensor(len(questions), max_length, max_word_len).fill_(null)
+        for i in range(len(ques_char)):  # Iterate over questions
+            for j in range(len(ques_char[i])): # Iterate over word
+                x2_c[i, j, :ques_char[i][j].size(0)].copy_(ques_char[i][j])
+            if(len(ques_char[i]) < max_length):
+                x2_c[i, len(ques_char[i]):, 0].fill_(NULLWORD_Idx_in_char)
+
+    #pdb.set_trace()
 
     # Pin memory if cuda
     if cuda:
@@ -149,20 +254,77 @@ def batchify(batch, null=0, cuda=False):
         x1_mask = x1_mask.pin_memory()
         x2 = x2.pin_memory()
         x2_mask = x2_mask.pin_memory()
+        target_mat = target_mat.pin_memory()
+        target_mask_mat = target_mask_mat.pin_memory()
+        if use_char:
+            x1_c = x1_c.pin_memory()
+            x2_c = x2_c.pin_memory()
+        if sent_predict:
+            x1_sent_mask = x1_sent_mask.pin_memory()
 
     # Maybe return without targets
+    #pdb.set_trace()
     if len(batch[0]) == NUM_INPUTS + NUM_EXTRA:
-        return x1, x1_f, x1_mask, x2, x2_mask, text, spans
+        #return x1, x1_f, x1_mask, x2, x2_mask, text, spans
+
+        return_list = [x1, x1_f, x1_mask, x2, x2_mask]
+        if use_char:
+            return_list = return_list + [x1_c, x2_c]
+        if sent_predict:
+            return_list = return_list + [x1_sent_mask, word_idx, sent_label]
+
+        return_list = return_list + [text, spans]
+        #pdb.set_trace()
+        return return_list
+
+        #return x1, x1_f, x1_mask, x2, x2_mask, x1_c, x2_c, text, spans
+        #else:
+    #            return x1, x1_f, x1_mask, x2, x2_mask, text, spans
 
     # ...Otherwise add targets
     elif len(batch[0]) == NUM_INPUTS + NUM_EXTRA + NUM_TARGETS:
-        y_s = torch.cat([ex[3] for ex in batch])
-        y_e = torch.cat([ex[4] for ex in batch])
-        return x1, x1_f, x1_mask, x2, x2_mask, y_s, y_e, text, spans
+        return_list = [x1, x1_f, x1_mask, x2, x2_mask, target_mat, target_mask_mat]
+        if use_char:
+            return_list = return_list + [x1_c, x2_c]
+        if sent_predict:
+            return_list = return_list + [x1_sent_mask, word_idx, sent_label]
+        return_list = return_list + [text, spans]
+
+        #pdb.set_trace()
+        return return_list
 
     # ...Otherwise wrong number of inputs
     raise RuntimeError('Wrong number of inputs per batch')
 
+
+# ------------------------------------------------------------------------------
+# Character processing.
+# ------------------------------------------------------------------------------
+#def encode_characters(characters, dict_char, max_word_len, NULLIdx, flag_debug=False):
+def encode_characters(characters, dict_char, max_word_len, NULLIdx):
+    #pdb.set_trace()
+    word_len = len(characters)
+    if(word_len > max_word_len):
+        characters = characters[:max_word_len]  # Make sure characters length smaller than max_word_len
+
+    #assert(word_len <= max_word_len)
+    to_add = max_word_len - word_len
+    characters_idx = [dict_char[i] for i in characters] + to_add * [NULLIdx] # right padding
+    #print('before')
+    #print(type(characters_idx))
+
+    characters_idx = np.asarray(characters_idx)
+
+    #print('after')
+    #print(type(characters_idx))
+
+
+    #if(flag_debug):
+     #   print(characters_idx)
+
+
+
+    return characters_idx
 
 # ------------------------------------------------------------------------------
 # General logging utilities.
@@ -185,3 +347,34 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+
+class Timer(object):
+    """Computes elapsed time."""
+    def __init__(self):
+        self.running = True
+        self.total = 0
+        self.start = time.time()
+
+    def reset(self):
+        self.running = True
+        self.total = 0
+        self.start = time.time()
+        return self
+
+    def resume(self):
+        if not self.running:
+            self.running = True
+            self.start = time.time()
+        return self
+
+    def stop(self):
+        if self.running:
+            self.running = False
+            self.total += time.time() - self.start
+        return self
+
+    def time(self):
+        if self.running:
+            return self.total + time.time() - self.start
+        return self.total

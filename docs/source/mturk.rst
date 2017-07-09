@@ -6,7 +6,7 @@
   of patent rights can be found in the PATENTS file in the same directory.
 
 Using Mechanical Turk
-=====================
+===============
 
 In ParlAI, you can use Amazon Mechanical Turk for **data collection**, **training** and **evaluation** of your dialog model. 
 
@@ -24,7 +24,7 @@ Each MTurk task has at least one human Turker that connects to ParlAI via the Me
 Each MTurk task also consists of a ``World`` where all agents live and interact within.
 
 Example Tasks
--------------
+---------------
 
 We provide a few examples of using Mechanical Turk with ParlAI:
 
@@ -33,11 +33,11 @@ We provide a few examples of using Mechanical Turk with ParlAI:
 - `Multi-Agent Dialog <https://github.com/facebookresearch/ParlAI/blob/master/parlai/mturk/tasks/multi_agent_dialog/>`__: round-robin chat between two local human agents and two Turkers.
 
 Task 1: Collecting Data
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^
 
 One of the biggest use cases of Mechanical Turk is to collect natural language data from human Turkers. 
 
-As an example, the `QA Data Collection task <https://github.com/facebookresearch/ParlAI/blob/master/parlai/mturk/tasks/qa_data_collection/>`__ does the following:
+As an example, the `QA Data Collection task <https://github.com/facebookresearch/ParlAI/blob/master/parlai/mturk/tasks/qa_data_collection/>`_ does the following:
 
 1. Pick a random Wikipedia paragraph from SQuAD dataset.
 2. Ask a Turker to provide a question given the paragraph.
@@ -51,9 +51,9 @@ After two turns, the task is finished, and the Turker's work is submitted for yo
 
 
 Task 2: Evaluating a Dialog Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^
 
-You can easily evaluate your dialog model's performance with human Turkers using ParlAI. As an example, the `Model Evaluator task <https://github.com/facebookresearch/ParlAI/blob/master/parlai/mturk/tasks/model_evaluator/>`__ does the following:
+You can easily evaluate your dialog model's performance with human Turkers using ParlAI. As an example, the `Model Evaluator task <https://github.com/facebookresearch/ParlAI/blob/master/parlai/mturk/tasks/model_evaluator/>`_ does the following:
 
 1. Initialize a task world with a dialog model agent (`ir_baseline <https://github.com/facebookresearch/ParlAI/blob/master/parlai/agents/ir_baseline/ir_baseline.py#L98>`__) and a dataset (`MovieDD-Reddit <https://github.com/facebookresearch/ParlAI/blob/master/parlai/tasks/moviedialog/agents.py#L57>`__).
 2. Let all the agents in the task world ``observe()`` and ``act()`` once, by calling ``parley()`` on the world.
@@ -61,7 +61,7 @@ You can easily evaluate your dialog model's performance with human Turkers using
 
 In ``ModelEvaluatorWorld``, there are two main components: one is the ``task_world`` that contains the task and the dialog model we are evaluating, the other is the ``MTurkAgent`` which is an interface to the human Turker.
 
-Note that since the human Turker speaks only once to provide the rating, the ``ModelEvaluatorWorld`` doesn't need to use ``turn_index`` to keep track of the turns. 
+Note that since the human Turker speaks only once to provide the rating, the ``ModelEvaluatorWorld`` doesn't need to use ``turn_index`` to keep track of the turns.
 
 After one turn, the task is finished, and the Turker's work is submitted for your review.
 
@@ -75,7 +75,7 @@ This task uses the ``MultiAgentDialogWorld`` which is already implemented in ``p
 
 
 Creating Your Own Task
-----------------------
+---------------
 
 ParlAI provides a generic MTurk dialog interface that one can use to implement any kind of dialog tasks. To create your own task, start with reading the tutorials on the provided examples, and then copy and modify the example ``worlds.py``, ``run.py`` and ``task_config.py`` files to create your task. 
 
@@ -87,7 +87,7 @@ A few things to keep in mind:
 
 
 Running a Task
---------------
+---------------
 
 If you have not used Mechanical Turk before, you will need an MTurk Requester Account and an AWS account (these are two separate accounts). Follow the steps below:
 
@@ -117,7 +117,7 @@ Please make sure to test your task in MTurk sandbox mode first (``--sandbox``) b
 
 
 Reviewing Turker's Work
------------------------
+---------------
 
 After all HITs are completed, you will be provided a webpage link to review them. 
 

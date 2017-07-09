@@ -15,7 +15,6 @@ class LocalHumanAgent(Agent):
     def __init__(self, opt, shared=None):
         super().__init__(opt)
         self.id = 'localHuman'
-        self.episodeDone = False
 
     def observe(self, msg):
         print(display_messages([msg]))
@@ -33,6 +32,3 @@ class LocalHumanAgent(Agent):
             reply_text = reply_text.replace('[DONE]', '')
         reply['text'] = reply_text
         return reply
-
-    def episode_done(self):
-        return self.episodeDone
