@@ -119,6 +119,7 @@ class DialogTeacher(Teacher):
         else:
             self.entry_idx += 1
 
+        #pdb.set_trace()
         action, epoch_done = self.data.get(self.episode_idx, self.entry_idx)
 
         if self.random:
@@ -134,6 +135,7 @@ class DialogTeacher(Teacher):
 
     def act(self):
         """Send new dialog message."""
+        #pdb.set_trace()
         if self.epochDone:
             return { 'episode_done': True }
         action, self.epochDone = self.next_example()
@@ -176,9 +178,6 @@ class DialogTeacher(Teacher):
                 answer_sent = 0
 
             action['answer_sent'] = answer_sent  # 0-based index
-
-
-
 
         if not self.datatype.startswith('train'):
             action.pop('labels', None)
@@ -254,6 +253,7 @@ class DialogData(object):
 
             # intern all strings so we don't store them more than once
             new_entry = []
+            #pdb.set_trace()
             if len(entry) > 0:
                 # process text if available
                 if entry[0] is not None:
@@ -263,17 +263,19 @@ class DialogData(object):
                 if len(entry) > 1:
                     # process labels if available
                     if entry[1] is not None:
-                        new_entry.append(tuple(sys.intern(e) for e in entry[1]))
+                        if isinstance(entry[1], str):  # MS marco
+                            new_entry.append(entry[1])
+                        else:                           # SQuAD
+                            new_entry.append(tuple(sys.intern(e) for e in entry[1]))
                     else:
                         new_entry.append(None)
                     if len(entry) > 2:
                         # process reward if available
-                        #pdb.set_trace()
                         if entry[2] is not None:
                             if self.opt['ans_sent_predict']:
                                 new_entry.append(entry[2]) # sentence prediction
                             else:
-                                new_entry.append(sys.intern(entry[2]))
+                                new_entry.append(sys.intern(str(entry[2])))
                         else:
                             new_entry.append(None)
                         if len(entry) > 3:
@@ -306,6 +308,7 @@ class DialogData(object):
     def get(self, episode_idx, entry_idx=0):
         """Returns a specific entry from the dataset."""
         # first look up data
+        #pdb.set_trace()
         episode = self.data[episode_idx]
         entry = episode[entry_idx]
         episode_done = entry_idx == len(episode) - 1
