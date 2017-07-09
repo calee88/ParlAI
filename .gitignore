@@ -105,3 +105,6 @@ ENV/
 *.swo
 *.swp
 *~
+
+# Experiments
+exp*
