@@ -126,21 +126,13 @@ class DocReaderModel(object):
         #pdb.set_trace()
         # Transfer to GPU
         if self.opt['cuda']:
-            #inputs = [Variable(e.cuda(async=True)) for e in ex[:5]]
-            #target_s = Variable(ex[5].cuda(async=True))
-            #target_e = Variable(ex[6].cuda(async=True))
-
+            pdb.set_trace()
             inputs = [Variable(e.cuda(async=True)) for e in ex[:self.input_idx_bdy]]
-            target_s = Variable(ex[self.target_idx_start].cuda(async=True))
-            target_e = Variable(ex[self.target_idx_start+1].cuda(async=True))
-        else:
-            #inputs = [Variable(e) for e in ex[:5]]
-            #target_s = Variable(ex[5])
-            #target_e = Variable(ex[6])
+            targets = [Variable(e.cuda(async=True)) for e in ex[self.input_idx_bdy:self.input_idx_bdy+2]]
 
+        else:
             inputs = [Variable(e) for e in ex[:self.input_idx_bdy]]
-            target_s = Variable(ex[self.target_idx_start])
-            target_e = Variable(ex[self.target_idx_start+1])
+            targets = [Variable(e) for e in ex[self.input_idx_bdy:self.input_idx_bdy+2]]
 
         #pdb.set_trace()
 

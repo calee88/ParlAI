@@ -128,7 +128,7 @@ class DocReaderAgent(Agent):
     def add_cmdline_args(argparser):
         config.add_cmdline_args(argparser)
 
-    def __init__(self, opt, shared=None, word_dict=None, char_dict=None):
+    def __init__(self, opt, shared=None, word_dict=None, gen_dict=None, char_dict=None):
         # All agents keep track of the episode (for multiple questions)
         self.episode_done = True
 
@@ -141,6 +141,7 @@ class DocReaderAgent(Agent):
         self.is_shared = False
         self.id = self.__class__.__name__
         self.word_dict = word_dict
+        self.gen_dict = gen_dict
         self.char_dict = char_dict
         self.opt = copy.deepcopy(opt)
         config.set_defaults(self.opt)
@@ -170,6 +171,7 @@ class DocReaderAgent(Agent):
 
         # TODO expand dict and embeddings for new data
         self.word_dict = saved_params['word_dict']
+        self.gen_dict = saved_params['gen_dict']
         if self.opt['add_char2word']:
             self.char_dict = saved_params['char_dict']
         else:
@@ -210,7 +212,7 @@ class DocReaderAgent(Agent):
             NULLWORD_Idx_in_char=self.opt['NULLWORD_Idx_in_char'], cuda=self.opt['cuda'],
             use_char=self.opt['add_char2word'], sent_predict=self.opt['ans_sent_predict']
         )
-        #pdb.set_trace()
+        pdb.set_trace()
         # Either train or predict
         if 'labels' in self.observation:
             self.n_examples += 1
@@ -250,7 +252,7 @@ class DocReaderAgent(Agent):
             use_char=self.opt['add_char2word'], sent_predict=self.opt['ans_sent_predict']
         )
 
-        #pdb.set_trace()
+
 
         # Either train or predict
         if 'labels' in observations[0]:
@@ -261,6 +263,8 @@ class DocReaderAgent(Agent):
             predictions = self.model.predict(batch)
             for i in range(len(predictions)):
                 batch_reply[valid_inds[i]]['text'] = predictions[i]
+
+        #pdb.set_trace()
 
         return batch_reply
 
@@ -287,7 +291,11 @@ class DocReaderAgent(Agent):
         document, question = ' '.join(fields[:-1]), fields[-1]
         inputs['document'] = self.word_dict.tokenize(document)
         inputs['question'] = self.word_dict.tokenize(question)
-        inputs['target'] = None
+        #pdb.set_trace()
+        if(isinstance(ex['labels'], str)):
+            inputs['target'] = self.gen_dict.tokenize(ex['labels'])
+        else:
+            inputs['target'] = None
 
         if self.opt['ans_sent_predict']:
             inputs['word_idx'] = ex['sent_end_idx_word']
@@ -296,13 +304,15 @@ class DocReaderAgent(Agent):
         # Find targets (if labels provided).
         # Return if we were unable to find an answer.
         if 'labels' in ex:
-            inputs['target'] = self._find_target(inputs['document'], ex['labels'])
-            if inputs['target'] is None:
-                return
+            if not isinstance(ex['labels'] , str):  # SQuAD, not MS marco
+                inputs['target'] = self._find_target(inputs['document'], ex['labels'])
+                if inputs['target'] is None:
+                    return
 
         # Vectorize.
         #inputs = vectorize(self.opt, inputs, self.word_dict, self.feature_dict)
-        inputs = vectorize(self.opt, inputs, self.word_dict, self.char_dict, self.feature_dict)
+        #pdb.set_trace()
+        inputs = vectorize(self.opt, inputs, self.word_dict, self.char_dict, self.feature_dict, self.gen_dict)
 
         # Return inputs with original text + spans (keep for prediction)
         #pdb.set_trace()
