@@ -42,7 +42,7 @@ case "$exp" in
 	#echo $emb
 	#echo $gpuid
 
-	DEBUG_msmarco) python $script --model_file $exp_dir/$exp --gpu $gpuid --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --gpu $gpuid --hidden_size 16 --hidden_size_bottleneck 16
+	DEBUG_msmarco) python $script --model_file $exp_dir/$exp --gpu $gpuid --dropout_rnn 0.4 --dropout_emb 0.3 --tune_partial 0 --gpu $gpuid --hidden_size 16 --hidden_size_bottleneck 16 --msmarco_paragraph_concat True
 	;;
 
 esac

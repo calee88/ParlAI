@@ -152,19 +152,24 @@ class DefaultTeacher(DialogTeacher):
 
             nParagraph = len(article['passages'])
             query_id = article['query_id']
-            selected_passage = -100 # default value
-            for i in range(nParagraph):
-                if(article['passages'][i]['is_selected']):
-                    selected_passage = i
-                    break
+            if self.opt['msmarco_paragraph_concat']:
+                context = ''
+                for i in range(nParagraph):
+                    context += article['passages'][i]['passage_text'] + ' '
 
-            if(selected_passage == -100):  # no passage is selected --> Skip these examples for now
-                continue
+            else:
+                selected_passage = -100 # default value
+                for i in range(nParagraph):
+                    if(article['passages'][i]['is_selected']):
+                        selected_passage = i
+                        break
 
-            #print('selected_passage = ' + str(selected_passage) + '/' + str(nParagraph))
+                if(selected_passage == -100):  # no passage is selected --> Skip these examples for now
+                    continue
+
+                context = article['passages'][selected_passage]['passage_text']
+
             #pdb.set_trace()
-
-            context = article['passages'][selected_passage]['passage_text']
 
             if self.opt['datatype']=='train':
                 yield (context + '\n' + question, answers), True

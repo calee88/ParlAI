@@ -29,6 +29,7 @@ def add_cmdline_args(parser):
     parser.add_argument('--log_file', type=str, default=None)
     parser.add_argument('--expnum', type=int, default=None)
     parser.add_argument('--collect_garbage_every', type=int, default=20)
+    parser.add_argument('--msmarco_paragraph_concat', type='bool', default=False)
 
     # Vocabulary
     parser.add_argument('--vocab_size', type=int, default=-100)
