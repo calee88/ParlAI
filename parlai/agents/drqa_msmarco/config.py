@@ -29,10 +29,13 @@ def add_cmdline_args(parser):
     parser.add_argument('--log_file', type=str, default=None)
     parser.add_argument('--expnum', type=int, default=None)
     parser.add_argument('--collect_garbage_every', type=int, default=20)
+    parser.add_argument('--msmarco_paragraph_concat', type='bool', default=False)
+    parser.add_argument('--DB', type=str, default='MSmarco')
 
     # Vocabulary
-    parser.add_argument('--vocab_size', type=int, default=85629)
+    parser.add_argument('--vocab_size', type=int, default=-100)
     parser.add_argument('--vocab_size_char', type=int, default=100)
+    parser.add_argument('--vocab_size_generator', type=int, default=30000)
     parser.add_argument('--NULLWORD_Idx_in_char', type=int, default=-1)
     parser.add_argument('--add_char2word', type='bool', default=False)
     parser.add_argument('--qemb_with_wordonly', type='bool', default=False)
@@ -68,26 +71,16 @@ def add_cmdline_args(parser):
     parser.add_argument('--rnn_type', type=str, default='lstm',
                         help='RNN type: lstm (default), gru, or rnn')
 
-    parser.add_argument('--qp_bottleneck', type='bool', default=True,
-                        help='---')
-    parser.add_argument('--qp_birnn', type='bool', default=True,
-                        help='----')
-    parser.add_argument('--qp_concat', type='bool', default=False,
-                        help='----')
-    parser.add_argument('--pp_bottleneck', type='bool', default=True,
-                        help='-----')
-    parser.add_argument('--pp_rnn_size', type=int, default=128,
-                        help='---')
-    parser.add_argument('--pp_birnn', type='bool', default=True,
-                        help='----')
-    parser.add_argument('--pp_concat', type='bool', default=False,
-                        help='----')
-    parser.add_argument('--pp_gate', type='bool', default=False,
-                        help='----')
-    parser.add_argument('--pp_rnn', type='bool', default=True,
-                        help='----')
-    parser.add_argument('--pp_identity', type='bool', default=True,
-                        help='----')
+    parser.add_argument('--qp_bottleneck', type='bool', default=True, help='---')
+    parser.add_argument('--qp_birnn', type='bool', default=True, help='----')
+    parser.add_argument('--qp_concat', type='bool', default=False, help='----')
+    parser.add_argument('--pp_bottleneck', type='bool', default=True, help='-----')
+    parser.add_argument('--pp_rnn_size', type=int, default=128, help='---')
+    parser.add_argument('--pp_birnn', type='bool', default=True, help='----')
+    parser.add_argument('--pp_concat', type='bool', default=False, help='----')
+    parser.add_argument('--pp_gate', type='bool', default=False, help='----')
+    parser.add_argument('--pp_rnn', type='bool', default=True, help='----')
+    parser.add_argument('--pp_identity', type='bool', default=True, help='----')
     
     # Optimization details
     parser.add_argument('--valid_metric', type=str,
@@ -100,14 +93,10 @@ def add_cmdline_args(parser):
     parser.add_argument('--display_iter', type=int, default=10,
                         help='Print train error after every \
                               <display_iter> epoches (default 10)')
-    parser.add_argument('--dropout_emb', type=float, default=0.4,
-                        help='Dropout rate for word embeddings')
-    parser.add_argument('--dropout_rnn', type=float, default=0.4,
-                        help='Dropout rate for RNN states')
-    parser.add_argument('--dropout_rnn_output', type='bool', default=True,
-                        help='Whether to dropout the RNN output')
-    parser.add_argument('--optimizer', type=str, default='adamax',
-                        help='Optimizer: sgd or adamax (default)')
+    parser.add_argument('--dropout_emb', type=float, default=0.4, help='Dropout rate for word embeddings')
+    parser.add_argument('--dropout_rnn', type=float, default=0.4, help='Dropout rate for RNN states')
+    parser.add_argument('--dropout_rnn_output', type='bool', default=True, help='Whether to dropout the RNN output')
+    parser.add_argument('--optimizer', type=str, default='adamax',  help='Optimizer: sgd or adamax (default)')
     """
     parser.add_argument('--learning_rate', '-lr', type=float, default=0.1,
                         help='Learning rate for SGD (default 0.1)')
@@ -122,6 +111,8 @@ def add_cmdline_args(parser):
     parser.add_argument('--momentum', type=float, default=0,
                         help='Momentum (default 0)')
     parser.add_argument('--lrate_decay', type=bool, default=True,
+                        help='-----')
+    parser.add_argument('--lrate_decay_factor', type=float, default=0.5,
                         help='-----')
 
     # Model-specific
@@ -142,7 +133,7 @@ def set_defaults(opt):
     # Embeddings options
     if 'embedding_file' in opt:
         if not os.path.isfile(opt['embedding_file']):
-            raise IOError('No such file: %s' % args.embedding_file)
+            raise IOError('No such file: %s' % opt['embedding_file'])
         with open(opt['embedding_file']) as f:
             dim = len(f.readline().strip().split(' ')) - 1
         opt['embedding_dim'] = dim

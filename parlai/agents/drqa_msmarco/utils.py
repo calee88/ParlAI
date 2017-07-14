@@ -7,7 +7,7 @@ import torch
 from torch.autograd import Variable
 import time
 import unicodedata
-from collections import Counter
+from collections import Counter # Used for TF-IDF
 
 import numpy as np
 # ------------------------------------------------------------------------------
@@ -62,11 +62,18 @@ def build_feature_dict(opt):
 
 
 #def vectorize(opt, ex, word_dict, feature_dict):
-def vectorize(opt, ex, word_dict, char_dict, feature_dict):
+def vectorize(opt, ex, word_dict, char_dict, feature_dict, gen_dict):
+    #pdb.set_trace()
     """Turn tokenized text inputs into feature vectors."""
+
+    #pdb.set_trace()
+
     # Index words
     document = torch.LongTensor([word_dict[w] for w in ex['document']])
     question = torch.LongTensor([word_dict[w] for w in ex['question']])
+
+    if(isinstance(ex['target'][0], str)): # MS marco
+        target = torch.LongTensor([gen_dict[w] for w in ex['target']])
 
     # Index words with character-level tensor
     T_doc = len(ex['document'])
@@ -135,36 +142,14 @@ def vectorize(opt, ex, word_dict, char_dict, feature_dict):
         else:
             return document, features, question
 
-    # ...or with target
-    start = torch.LongTensor(1).fill_(ex['target'][0])
-    end = torch.LongTensor(1).fill_(ex['target'][1])
-
-    #pdb.set_trace()
-
-    # Answer Sentence Prediction
-    if opt['ans_sent_predict']:
-        word_boundary = np.array([w for w in ex['word_idx']])
-        answer_sent = ex['answer_sent']
-        if opt['add_char2word']:
-            return document, features, question, document_char, question_char, word_boundary, answer_sent, start, end  # document_char, question_char : np.array
-        else:
-            return document, features, question, word_boundary, answer_sent, start, end
-
-
-
-    #return document, features, question, start, end
-    if opt['add_char2word']:
-        return document, features, question, document_char, question_char, start, end  # document_char, question_char : np.array
-    else:
-        return document, features, question, start, end
+    return document, features, question, target
 
 
 #def batchify(batch, null=0, cuda=False):
 def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False, use_char=False, sent_predict=False):
     """Collate inputs into batches."""
 
-    NUM_INPUTS = 3 # doc(word) + feature + ques(word)
-    #NUM_INPUTS = 5  # doc(word) + feature + ques(word) + doc(char) + ques(char)
+    NUM_INPUTS = 2 # doc(word) + feature
 
     n_word_idx=0
     n_sent_label=0
@@ -178,8 +163,8 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
         n_ques_char=4
         n_word_idx+=2
         n_sent_label+=2
-        
-    NUM_TARGETS = 2
+
+    NUM_TARGETS = 2  # Target matrix + Target mask matrix
     NUM_EXTRA = 2
 
     # Get elements
@@ -187,6 +172,7 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
     docs = [ex[0] for ex in batch]
     features = [ex[1] for ex in batch]
     questions = [ex[2] for ex in batch]
+    targets = [ex[3] for ex in batch]
     if use_char:
         docs_char = [ex[n_doc_char] for ex in batch]
         ques_char = [ex[n_ques_char] for ex in batch]
@@ -196,6 +182,15 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
 
     text = [ex[-2] for ex in batch]
     spans = [ex[-1] for ex in batch]
+
+    # Batch target matrix
+    max_length = max([t.size(0) for t in targets])
+    target_mat = torch.LongTensor(len(targets), max_length).fill_(null)
+    target_mask_mat = torch.LongTensor(len(targets), max_length).fill_(1)
+    for i, t in enumerate(targets):
+        target_mat[i, :t.size(0)].copy_(t)
+        target_mask_mat[i, :t.size(0)].fill_(0)
+
 
     # Batch documents and features
     max_length = max([d.size(0) for d in docs])
@@ -258,6 +253,8 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
         x1_mask = x1_mask.pin_memory()
         x2 = x2.pin_memory()
         x2_mask = x2_mask.pin_memory()
+        target_mat = target_mat.pin_memory()
+        target_mask_mat = target_mask_mat.pin_memory()
         if use_char:
             x1_c = x1_c.pin_memory()
             x2_c = x2_c.pin_memory()
@@ -268,6 +265,7 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
     #pdb.set_trace()
     if len(batch[0]) == NUM_INPUTS + NUM_EXTRA:
         #return x1, x1_f, x1_mask, x2, x2_mask, text, spans
+
         return_list = [x1, x1_f, x1_mask, x2, x2_mask]
         if use_char:
             return_list = return_list + [x1_c, x2_c]
@@ -275,6 +273,7 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
             return_list = return_list + [x1_sent_mask, word_idx, sent_label]
 
         return_list = return_list + [text, spans]
+        #pdb.set_trace()
         return return_list
 
         #return x1, x1_f, x1_mask, x2, x2_mask, x1_c, x2_c, text, spans
@@ -283,22 +282,15 @@ def batchify(batch, null=0, max_word_len=25, NULLWORD_Idx_in_char=99, cuda=False
 
     # ...Otherwise add targets
     elif len(batch[0]) == NUM_INPUTS + NUM_EXTRA + NUM_TARGETS:
-        y_s = torch.cat([ex[NUM_INPUTS] for ex in batch])
-        y_e = torch.cat([ex[NUM_INPUTS+1] for ex in batch])
-
-        return_list = [x1, x1_f, x1_mask, x2, x2_mask]
+        return_list = [x1, x1_f, x1_mask, x2, x2_mask, target_mat, target_mask_mat]
         if use_char:
             return_list = return_list + [x1_c, x2_c]
         if sent_predict:
             return_list = return_list + [x1_sent_mask, word_idx, sent_label]
-        return_list = return_list + [y_s, y_e, text, spans]
+        return_list = return_list + [text, spans]
 
+        #pdb.set_trace()
         return return_list
-
-        #if use_char:
-        #    return x1, x1_f, x1_mask, x2, x2_mask, x1_c, x2_c, y_s, y_e, text, spans
-        #else:
-        #    return x1, x1_f, x1_mask, x2, x2_mask, y_s, y_e, text, spans
 
     # ...Otherwise wrong number of inputs
     raise RuntimeError('Wrong number of inputs per batch')
@@ -385,3 +377,57 @@ class Timer(object):
         if self.running:
             return self.total + time.time() - self.start
         return self.total
+
+
+def tokenize_and_get_features(opt, word_dict, feature_dict, passage, question):
+
+    #pdb.set_trace()
+
+    # Tokenize question, passage by word level
+    passage_tokenized = word_dict.tokenize(passage)
+    question_tokenized = word_dict.tokenize(question)
+
+    # Create extra features vector
+    features = torch.zeros(len(passage_tokenized), len(feature_dict))
+
+   # f_{exact_match}
+    if opt['use_in_question']:
+        q_words_cased = set([w for w in question_tokenized])
+        q_words_uncased = set([w.lower() for w in question_tokenized])
+        for i in range(len(passage_tokenized)):
+            if passage_tokenized[i] in q_words_cased:
+                features[i][feature_dict['in_question']] = 1.0
+            if passage_tokenized[i].lower() in q_words_uncased:
+                features[i][feature_dict['in_question_uncased']] = 1.0
+    #print('pass exact match')
+
+
+    # f_{tf}
+    if opt['use_tf']:
+        counter = Counter([w.lower() for w in passage_tokenized])
+        l = len(passage_tokenized)
+        for i, w in enumerate(passage_tokenized):
+            features[i][feature_dict['tf']] = counter[w.lower()] * 1.0 / l
+    #print('pass TF')
+
+
+    if opt['use_time'] > 0:
+        # Counting from the end, each (full-stop terminated) sentence gets
+        # its own time identitfier.
+        sent_idx = 0
+        def _full_stop(w):
+            return w in {'.', '?', '!'}
+        for i, w in reversed(list(enumerate(passage_tokenized))):
+            sent_idx  = sent_idx + 1 if _full_stop(w) else max(sent_idx, 1)
+            if sent_idx < opt['use_time']:
+                features[i][feature_dict['time=T%d' % sent_idx]] = 1.0
+            else:
+                features[i][feature_dict['time>=T%d' % opt['use_time']]] = 1.0
+
+    #print('pass time')
+
+    span_tokenized = word_dict.span_tokenize(passage)
+    #pdb.set_trace()
+
+    return passage_tokenized, question_tokenized, span_tokenized, features
+

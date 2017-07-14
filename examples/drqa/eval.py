@@ -46,16 +46,14 @@ def main(opt):
     doc_reader = DocReaderAgent(opt)
 
     # Log params
-    logger.info('[ Created with options: ] %s' %
-                ''.join(['\n{}\t{}'.format(k, v)
-                         for k, v in doc_reader.opt.items()]))
+    logger.info('[ Created with options: ] %s' % ''.join(['\n{}\t{}'.format(k, v) for k, v in doc_reader.opt.items()]))
 
     logger.info('[ Running validation... ]')
     valid_world = create_task(opt, doc_reader)
     valid_time = Timer()
 
     # Sent prediction
-    pdb.set_trace()
+    #pdb.set_trace()
     valid_world.agents[1].opt['ans_sent_predict'] = False
     valid_world.agents[1].model.network.opt['ans_sent_predict'] = False  # disable sentence predicction by default
     if opt['ans_sent_predict']:
@@ -84,14 +82,10 @@ def main(opt):
     metrics = valid_world.report()
     if 'tasks' in metrics:
         for task, t_metrics in metrics['tasks'].items():
-            logger.info('task = %s | EM = %.4f | F1 = %.4f | exs = %d | ' %
-                        (task, t_metrics['accuracy'],
-                         t_metrics['f1'], t_metrics['total']))
-        logger.info('Overall EM = %.4f | exs = %d' %
-                    (metrics['accuracy'], metrics['total']))
+            logger.info('task = %s | EM = %.4f | F1 = %.4f | exs = %d | ' %(task, t_metrics['accuracy'], t_metrics['f1'], t_metrics['total']))
+        logger.info('Overall EM = %.4f | exs = %d' % (metrics['accuracy'], metrics['total']))
     else:
-        logger.info('EM = %.4f | F1 = %.4f | exs = %d' %
-                    (metrics['accuracy'], metrics['f1'], metrics['total']))
+        logger.info('EM = %.4f | F1 = %.4f | exs = %d' % (metrics['accuracy'], metrics['f1'], metrics['total']))
     logger.info('[ Done. Time = %.2f (s) ]' % valid_time.time())
 
     # Close prediction file

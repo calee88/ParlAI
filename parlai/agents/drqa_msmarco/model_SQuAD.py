@@ -76,12 +76,7 @@ class DocReaderModel(object):
                                        weight_decay=opt['weight_decay'])
         elif opt['optimizer'] == 'adamax':
             self.optimizer = optim.Adamax(parameters,
-                                          weight_decay=opt['weight_decay'],
-                                          lr=self.opt['learning_rate'])
-        elif self.opt['optimizer'] == 'adam':
-            self.optimizer = optim.Adam(parameters,
-                                          weight_decay=self.opt['weight_decay'], 
-                                          lr=self.opt['learning_rate'])
+                                          weight_decay=opt['weight_decay'])
         else:
             raise RuntimeError('Unsupported optimizer: %s' % opt['optimizer'])
         
@@ -122,7 +117,6 @@ class DocReaderModel(object):
         # Train mode
         self.network.train()
 
-        
         #pdb.set_trace()
         # Transfer to GPU
         if self.opt['cuda']:
@@ -187,8 +181,7 @@ class DocReaderModel(object):
         loss.backward()
 
         # Clip gradients
-        if self.opt['grad_clipping'] > 0:
-            torch.nn.utils.clip_grad_norm(self.network.parameters(), self.opt['grad_clipping'])            
+        torch.nn.utils.clip_grad_norm(self.network.parameters(), self.opt['grad_clipping'])
 
         # Update parameters
         self.optimizer.step()

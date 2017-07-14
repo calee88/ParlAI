@@ -20,8 +20,6 @@ from . import config
 from .utils import build_feature_dict, vectorize, batchify, normalize_text
 from .model import DocReaderModel
 
-import pdb
-
 logger = logging.getLogger('DrQA')
 
 # ------------------------------------------------------------------------------
@@ -79,43 +77,6 @@ class SimpleDictionaryAgent(DictionaryAgent):
                 self.tok2ind[token] = index
                 self.ind2tok[index] = token
 
-class SimpleCharDictionaryAgent(DictionaryAgent):
-    """Override DictionaryAgent to use spaCy tokenizer."""
-
-    @staticmethod
-    def add_cmdline_args(argparser):
-        DictionaryAgent.add_cmdline_args(argparser)
-        argparser.add_arg(
-        )
-
-    def __init__(self, *args, **kwargs):
-        super(SimpleCharDictionaryAgent, self).__init__(*args, **kwargs)
-
-        # Initialize
-        self.embedding_chars = None
-
-    def tokenize(self, text, **kwargs):
-        # String into word seq list
-        #tokens = NLP.tokenizer(text)
-        #return [t.text for t in tokens]
-
-        # String into char seq list (with lower case)
-        return list(text)
-
-
-    def add_to_dict(self, tokens):
-        """Builds dictionary from the list of provided tokens.
-        Only adds words contained in self.embedding_words, if not None.
-        """
-        for token in tokens:
-            if (self.embedding_chars is not None and
-                token not in self.embedding_chars):
-                continue
-            self.freq[token] += 1
-            if token not in self.tok2ind:
-                index = len(self.tok2ind)
-                self.tok2ind[token] = index
-                self.ind2tok[index] = token
 
 # ------------------------------------------------------------------------------
 # Document Reader.
@@ -128,7 +89,7 @@ class DocReaderAgent(Agent):
     def add_cmdline_args(argparser):
         config.add_cmdline_args(argparser)
 
-    def __init__(self, opt, shared=None, word_dict=None, char_dict=None):
+    def __init__(self, opt, shared=None, word_dict=None):
         # All agents keep track of the episode (for multiple questions)
         self.episode_done = True
 
@@ -141,7 +102,6 @@ class DocReaderAgent(Agent):
         self.is_shared = False
         self.id = self.__class__.__name__
         self.word_dict = word_dict
-        self.char_dict = char_dict
         self.opt = copy.deepcopy(opt)
         config.set_defaults(self.opt)
         if 'pretrained_model' in self.opt:
@@ -155,34 +115,29 @@ class DocReaderAgent(Agent):
     def _init_from_scratch(self):
         self.feature_dict = build_feature_dict(self.opt)
         self.opt['num_features'] = len(self.feature_dict)
-        #pdb.set_trace()
         self.opt['vocab_size'] = len(self.word_dict)
-        if self.opt['add_char2word']:
-            self.opt['vocab_size_char'] = len(self.char_dict)
 
         logger.info('[ Initializing model from scratch ]')
-        self.model = DocReaderModel(self.opt, self.word_dict, self.char_dict, self.feature_dict)
+        self.model = DocReaderModel(self.opt, self.word_dict, self.feature_dict)
         self.model.set_embeddings()
 
     def _init_from_saved(self):
         logger.info('[ Loading model %s ]' % self.opt['pretrained_model'])
-        saved_params = torch.load(self.opt['pretrained_model'])
+        saved_params = torch.load(
+            self.opt['pretrained_model'],
+            map_location=lambda storage, loc: storage
+        )
 
         # TODO expand dict and embeddings for new data
         self.word_dict = saved_params['word_dict']
-        if self.opt['add_char2word']:
-            self.char_dict = saved_params['char_dict']
-        else:
-            self.char_dict=None
         self.feature_dict = saved_params['feature_dict']
         self.state_dict = saved_params['state_dict']
         config.override_args(self.opt, saved_params['config'])
-        self.model = DocReaderModel(self.opt, self.word_dict, self.char_dict,
+        self.model = DocReaderModel(self.opt, self.word_dict,
                                     self.feature_dict, self.state_dict)
 
     def observe(self, observation):
         observation = copy.deepcopy(observation)
-        #pdb.set_trace()
         if not self.episode_done:
             dialogue = self.observation['text'].split('\n')[:-1]
             dialogue.extend(observation['text'].split('\n'))
@@ -198,19 +153,13 @@ class DocReaderAgent(Agent):
 
         reply = {'id': self.getID()}
 
-        #pdb.set_trace()
         ex = self._build_ex(self.observation)
-
         if ex is None:
             return reply
-
-        #pdb.set_trace()
         batch = batchify(
-            [ex], null=self.word_dict['<NULL>'], max_word_len=self.opt['max_word_len'],
-            NULLWORD_Idx_in_char=self.opt['NULLWORD_Idx_in_char'], cuda=self.opt['cuda'],
-            use_char=self.opt['add_char2word'], sent_predict=self.opt['ans_sent_predict']
+            [ex], null=self.word_dict['<NULL>'], cuda=self.opt['cuda']
         )
-        #pdb.set_trace()
+
         # Either train or predict
         if 'labels' in self.observation:
             self.n_examples += 1
@@ -236,21 +185,14 @@ class DocReaderAgent(Agent):
         valid_inds = [i for i in range(batchsize) if examples[i] is not None]
         examples = [ex for ex in examples if ex is not None]
 
-
-
         # If all examples are invalid, return an empty batch.
         if len(examples) == 0:
             return batch_reply
 
-        #pdb.set_trace()
         # Else, use what we have (hopefully everything).
         batch = batchify(
-            examples, null=self.word_dict['<NULL>'], max_word_len=self.opt['max_word_len'],
-            NULLWORD_Idx_in_char=self.opt['NULLWORD_Idx_in_char'], cuda=self.opt['cuda'],
-            use_char=self.opt['add_char2word'], sent_predict=self.opt['ans_sent_predict']
+            examples, null=self.word_dict['<NULL>'], cuda=self.opt['cuda']
         )
-
-        #pdb.set_trace()
 
         # Either train or predict
         if 'labels' in observations[0]:
@@ -282,30 +224,29 @@ class DocReaderAgent(Agent):
 
         # Split out document + question
         inputs = {}
-        fields = ex['text'].split('\n')
-        #pdb.set_trace()
+        fields = ex['text'].strip().split('\n')
+
+        # Data is expected to be text + '\n' + question
+        if len(fields) < 2:
+            raise RuntimeError('Invalid input. Is task a QA task?')
+
         document, question = ' '.join(fields[:-1]), fields[-1]
         inputs['document'] = self.word_dict.tokenize(document)
         inputs['question'] = self.word_dict.tokenize(question)
         inputs['target'] = None
 
-        if self.opt['ans_sent_predict']:
-            inputs['word_idx'] = ex['sent_end_idx_word']
-            inputs['answer_sent'] = ex['answer_sent']
-
         # Find targets (if labels provided).
         # Return if we were unable to find an answer.
         if 'labels' in ex:
-            inputs['target'] = self._find_target(inputs['document'], ex['labels'])
+            inputs['target'] = self._find_target(inputs['document'],
+                                                 ex['labels'])
             if inputs['target'] is None:
                 return
 
         # Vectorize.
-        #inputs = vectorize(self.opt, inputs, self.word_dict, self.feature_dict)
-        inputs = vectorize(self.opt, inputs, self.word_dict, self.char_dict, self.feature_dict)
+        inputs = vectorize(self.opt, inputs, self.word_dict, self.feature_dict)
 
         # Return inputs with original text + spans (keep for prediction)
-        #pdb.set_trace()
         return inputs + (document, self.word_dict.span_tokenize(document))
 
     def _find_target(self, document, labels):
@@ -325,15 +266,8 @@ class DocReaderAgent(Agent):
         return targets[np.random.choice(len(targets))]
 
     def _log(self):
-        #iter_global = self.model.updates
         if self.model.updates % self.opt['display_iter'] == 0:
-            if self.opt['ans_sent_predict']:
-                logger.info(
-                    '[train] updates = %d | train loss QA = %.2f | train loss sent = %.2f, exs = %d' %
-                    (self.model.updates, self.model.train_loss_QA.avg, self.model.train_loss_sentpredict.avg, self.n_examples)
-                )
-            else:
-                 logger.info(
-                    '[train] updates = %d | train loss = %.2f | exs = %d' %
-                    (self.model.updates, self.model.train_loss.avg, self.n_examples)
-                )
+            logger.info(
+                '[train] updates = %d | train loss = %.2f | exs = %d' %
+                (self.model.updates, self.model.train_loss.avg, self.n_examples)
+            )

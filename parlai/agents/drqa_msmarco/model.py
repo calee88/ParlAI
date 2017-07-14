@@ -122,25 +122,17 @@ class DocReaderModel(object):
         # Train mode
         self.network.train()
 
-        
+
         #pdb.set_trace()
         # Transfer to GPU
         if self.opt['cuda']:
-            #inputs = [Variable(e.cuda(async=True)) for e in ex[:5]]
-            #target_s = Variable(ex[5].cuda(async=True))
-            #target_e = Variable(ex[6].cuda(async=True))
-
+            #pdb.set_trace()
             inputs = [Variable(e.cuda(async=True)) for e in ex[:self.input_idx_bdy]]
-            target_s = Variable(ex[self.target_idx_start].cuda(async=True))
-            target_e = Variable(ex[self.target_idx_start+1].cuda(async=True))
-        else:
-            #inputs = [Variable(e) for e in ex[:5]]
-            #target_s = Variable(ex[5])
-            #target_e = Variable(ex[6])
+            targets = [Variable(e.cuda(async=True)) for e in ex[self.input_idx_bdy:self.input_idx_bdy+2]]
 
+        else:
             inputs = [Variable(e) for e in ex[:self.input_idx_bdy]]
-            target_s = Variable(ex[self.target_idx_start])
-            target_e = Variable(ex[self.target_idx_start+1])
+            targets = [Variable(e) for e in ex[self.input_idx_bdy:self.input_idx_bdy+2]]
 
         #pdb.set_trace()
 
@@ -261,3 +253,42 @@ class DocReaderModel(object):
 
     def cuda(self):
         self.network.cuda()
+
+    def predict_single(self, word_dict, feature, passage, passage_t, question_t, span_t):
+        # Make data_single from passage, question
+        data_single = []
+        data_single.append(torch.LongTensor([self.word_dict[w] for w in passage_t]).unsqueeze(0))  # x1, torch.LongTensor
+        data_single.append(feature.unsqueeze(0)) # x1_f
+        data_single.append(torch.ByteTensor(data_single[0].size()).fill_(0)) # x1_mask
+        data_single.append(torch.LongTensor([self.word_dict[w] for w in question_t]).unsqueeze(0))  # x2, torch.LongTensor
+        data_single.append(torch.ByteTensor(data_single[3].size()).fill_(0)) # x2_mask
+
+        #pdb.set_trace()
+        # GPU
+        data_single = [Variable(e.cuda(async=True)) for e in data_single]
+
+        score_list = self.network(*data_single)
+
+        score_s = score_list[0]
+        score_e = score_list[1]
+
+        # Transfer to CPU/normal tensors for numpy ops
+        score_s = score_s.data.cpu()
+        score_e = score_e.data.cpu()
+
+        # Get argmax text spans
+        text = passage
+        spans = span_t
+        predictions = []
+        max_len = self.opt['max_len'] or score_s.size(1)
+
+        scores = torch.ger(score_s[0], score_e[0])
+        scores.triu_().tril_(max_len - 1)
+        scores = scores.numpy()
+        s_idx, e_idx = np.unravel_index(np.argmax(scores), scores.shape)
+        s_offset, e_offset = spans[s_idx][0], spans[e_idx][1]
+        predictions.append(text[s_offset:e_offset])
+
+        #pdb.set_trace()
+        return predictions
+

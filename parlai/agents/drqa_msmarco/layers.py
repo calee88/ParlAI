@@ -204,10 +204,6 @@ class SeqAttnMatch(nn.Module):
             self.linear = nn.Linear(input_size, input_size)
         else:
             self.linear = None
-        self.alpha = None
-    
-    def get_alpha(self):
-        return self.alpha
 
     def forward(self, x, y, y_mask):
         """Input shapes:
@@ -238,8 +234,7 @@ class SeqAttnMatch(nn.Module):
         # Normalize with softmax
         alpha_flat = F.softmax(scores.view(-1, y.size(1)))
         alpha = alpha_flat.view(-1, x.size(1), y.size(1))
-        self.alpha = alpha
-        
+
         # Take weighted average
         matched_seq = alpha.bmm(y)
         return matched_seq
@@ -257,10 +252,6 @@ class BilinearSeqAttn(nn.Module):
             self.linear = nn.Linear(y_size, x_size)
         else:
             self.linear = None
-        self.alpha = None    
-        
-    def get_alpha(self):
-        return self.alpha
 
     def forward(self, x, y, x_mask):
         """
@@ -278,8 +269,6 @@ class BilinearSeqAttn(nn.Module):
         else:
             # ...Otherwise 0-1 probabilities
             alpha = F.softmax(xWy)
-        
-        self.alpha = alpha
         return alpha
 
 
@@ -290,10 +279,7 @@ class LinearSeqAttn(nn.Module):
     def __init__(self, input_size):
         super(LinearSeqAttn, self).__init__()
         self.linear = nn.Linear(input_size, 1)
-        
-    def get_alpha(self):
-        return self.alpha
-    
+
     def forward(self, x, x_mask):
         """
         x = batch * len * hdim
@@ -303,7 +289,6 @@ class LinearSeqAttn(nn.Module):
         scores = self.linear(x_flat).view(x.size(0), x.size(1))
         scores.data.masked_fill_(x_mask.data, -float('inf'))
         alpha = F.softmax(scores)
-        self.alpha = alpha
         return alpha
 
 
@@ -354,8 +339,7 @@ class GatedAttentionBilinearRNN(nn.Module):
             self.rnns.append(rnn_type(input_size, hidden_size,
                                       num_layers=1, bidirectional=birnn))
         
-        self.alpha = None
-        
+
     def forward(self,  x, x_mask, y, y_mask):
         """Can choose to either handle or ignore variable length sequences.
         Always handle padding in eval.
@@ -371,9 +355,6 @@ class GatedAttentionBilinearRNN(nn.Module):
         # We don't care.
         return self._forward_unpadded(x, x_mask, y, y_mask)
     
-    def get_alpha(self):
-        return self.alpha
-         
     def _gated_attended_input(self, x, x_mask, y, y_mask):
         nbatch = x.size(0) #(batch, seq_len, input_size)
         x_len = x.size(1)
@@ -396,13 +377,11 @@ class GatedAttentionBilinearRNN(nn.Module):
         #pdb.set_trace()
         #alpha = alpha.view(alpha.size(0), 1, y_len)
         #attend_y = alpha.bmm(y.unsqueeze(1).repeat(1,x_len,1,1).view(nbatch*x_len, y_len,-1)).view(nbatch, x_len, -1)         # HR ver1
-        
-        #pdb.set_trace()
+
         # Ver2 -- get exactly same value as Ver1
         alpha = alpha.view(nbatch, x_len, y_len)
         attend_y = alpha.bmm(y)
-        self.alpha = alpha
-        
+
         #pdb.set_trace()
 
         attend_y.data.masked_fill_(x_mask.unsqueeze(2).expand_as(attend_y).data, 0) ## comment out?

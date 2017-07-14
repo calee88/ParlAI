@@ -64,9 +64,15 @@ def build_feature_dict(opt):
 #def vectorize(opt, ex, word_dict, feature_dict):
 def vectorize(opt, ex, word_dict, char_dict, feature_dict):
     """Turn tokenized text inputs into feature vectors."""
+
+    pdb.set_trace()
+
     # Index words
     document = torch.LongTensor([word_dict[w] for w in ex['document']])
     question = torch.LongTensor([word_dict[w] for w in ex['question']])
+
+    if(isinstance(ex['target'], str)): # MS marco
+        target = torch.LongTensor([word_dict[w] for w in ex['target']])
 
     # Index words with character-level tensor
     T_doc = len(ex['document'])
@@ -135,28 +141,29 @@ def vectorize(opt, ex, word_dict, char_dict, feature_dict):
         else:
             return document, features, question
 
-    # ...or with target
-    start = torch.LongTensor(1).fill_(ex['target'][0])
-    end = torch.LongTensor(1).fill_(ex['target'][1])
+    if(isinstance(ex['target'], str)): # MS marco
+        return document, features, question, target
 
-    #pdb.set_trace()
+    else: # SQuAD
+        # ...or with target
+        start = torch.LongTensor(1).fill_(ex['target'][0])
+        end = torch.LongTensor(1).fill_(ex['target'][1])
 
-    # Answer Sentence Prediction
-    if opt['ans_sent_predict']:
-        word_boundary = np.array([w for w in ex['word_idx']])
-        answer_sent = ex['answer_sent']
+
+        # Answer Sentence Prediction
+        if opt['ans_sent_predict']:
+            word_boundary = np.array([w for w in ex['word_idx']])
+            answer_sent = ex['answer_sent']
+            if opt['add_char2word']:
+                return document, features, question, document_char, question_char, word_boundary, answer_sent, start, end  # document_char, question_char : np.array
+            else:
+                return document, features, question, word_boundary, answer_sent, start, end
+
+        #return document, features, question, start, end
         if opt['add_char2word']:
-            return document, features, question, document_char, question_char, word_boundary, answer_sent, start, end  # document_char, question_char : np.array
+            return document, features, question, document_char, question_char, start, end  # document_char, question_char : np.array
         else:
-            return document, features, question, word_boundary, answer_sent, start, end
-
-
-
-    #return document, features, question, start, end
-    if opt['add_char2word']:
-        return document, features, question, document_char, question_char, start, end  # document_char, question_char : np.array
-    else:
-        return document, features, question, start, end
+            return document, features, question, start, end
 
 
 #def batchify(batch, null=0, cuda=False):

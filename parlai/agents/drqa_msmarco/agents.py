@@ -17,8 +17,9 @@ except ModuleNotFoundError:
 from parlai.core.agents import Agent
 from parlai.core.dict import DictionaryAgent
 from . import config
-from .utils import build_feature_dict, vectorize, batchify, normalize_text
+from .utils import build_feature_dict, vectorize, batchify, normalize_text, tokenize_and_get_features
 from .model import DocReaderModel
+from torch.autograd import Variable
 
 import pdb
 
@@ -63,6 +64,7 @@ class SimpleDictionaryAgent(DictionaryAgent):
 
     def span_tokenize(self, text):
         tokens = NLP.tokenizer(text)
+        #pdb.set_trace()
         return [(t.idx, t.idx + len(t.text)) for t in tokens]
 
     def add_to_dict(self, tokens):
@@ -128,7 +130,7 @@ class DocReaderAgent(Agent):
     def add_cmdline_args(argparser):
         config.add_cmdline_args(argparser)
 
-    def __init__(self, opt, shared=None, word_dict=None, char_dict=None):
+    def __init__(self, opt, shared=None, word_dict=None, gen_dict=None, char_dict=None):
         # All agents keep track of the episode (for multiple questions)
         self.episode_done = True
 
@@ -141,6 +143,7 @@ class DocReaderAgent(Agent):
         self.is_shared = False
         self.id = self.__class__.__name__
         self.word_dict = word_dict
+        self.gen_dict = gen_dict
         self.char_dict = char_dict
         self.opt = copy.deepcopy(opt)
         config.set_defaults(self.opt)
@@ -166,10 +169,14 @@ class DocReaderAgent(Agent):
 
     def _init_from_saved(self):
         logger.info('[ Loading model %s ]' % self.opt['pretrained_model'])
+        #pdb.set_trace()
         saved_params = torch.load(self.opt['pretrained_model'])
 
         # TODO expand dict and embeddings for new data
+        #pdb.set_trace()
         self.word_dict = saved_params['word_dict']
+        if('gen_dict' in saved_params):
+            self.gen_dict = saved_params['gen_dict']
         if self.opt['add_char2word']:
             self.char_dict = saved_params['char_dict']
         else:
@@ -177,8 +184,7 @@ class DocReaderAgent(Agent):
         self.feature_dict = saved_params['feature_dict']
         self.state_dict = saved_params['state_dict']
         config.override_args(self.opt, saved_params['config'])
-        self.model = DocReaderModel(self.opt, self.word_dict, self.char_dict,
-                                    self.feature_dict, self.state_dict)
+        self.model = DocReaderModel(self.opt, self.word_dict, self.char_dict, self.feature_dict, self.state_dict)
 
     def observe(self, observation):
         observation = copy.deepcopy(observation)
@@ -210,7 +216,7 @@ class DocReaderAgent(Agent):
             NULLWORD_Idx_in_char=self.opt['NULLWORD_Idx_in_char'], cuda=self.opt['cuda'],
             use_char=self.opt['add_char2word'], sent_predict=self.opt['ans_sent_predict']
         )
-        #pdb.set_trace()
+        pdb.set_trace()
         # Either train or predict
         if 'labels' in self.observation:
             self.n_examples += 1
@@ -237,7 +243,6 @@ class DocReaderAgent(Agent):
         examples = [ex for ex in examples if ex is not None]
 
 
-
         # If all examples are invalid, return an empty batch.
         if len(examples) == 0:
             return batch_reply
@@ -250,7 +255,7 @@ class DocReaderAgent(Agent):
             use_char=self.opt['add_char2word'], sent_predict=self.opt['ans_sent_predict']
         )
 
-        #pdb.set_trace()
+
 
         # Either train or predict
         if 'labels' in observations[0]:
@@ -262,7 +267,17 @@ class DocReaderAgent(Agent):
             for i in range(len(predictions)):
                 batch_reply[valid_inds[i]]['text'] = predictions[i]
 
+        #pdb.set_trace()
+
         return batch_reply
+
+    def QA_single(self, passage, question):
+        passage_t, question_t, span_t, feature = tokenize_and_get_features(self.opt, self.word_dict, self.feature_dict, passage, question)
+
+        # predict answer
+        answer = self.model.predict_single(self.word_dict, feature, passage, passage_t, question_t, span_t)
+
+        return answer
 
     def save(self, filename):
         """Save the parameters of the agent to a file."""
@@ -287,7 +302,11 @@ class DocReaderAgent(Agent):
         document, question = ' '.join(fields[:-1]), fields[-1]
         inputs['document'] = self.word_dict.tokenize(document)
         inputs['question'] = self.word_dict.tokenize(question)
-        inputs['target'] = None
+        #pdb.set_trace()
+        if(isinstance(ex['labels'], str)):   # MSmarco
+            inputs['target'] = self.gen_dict.tokenize(ex['labels'])
+        else: # SQuAD
+            inputs['target'] = None
 
         if self.opt['ans_sent_predict']:
             inputs['word_idx'] = ex['sent_end_idx_word']
@@ -296,13 +315,15 @@ class DocReaderAgent(Agent):
         # Find targets (if labels provided).
         # Return if we were unable to find an answer.
         if 'labels' in ex:
-            inputs['target'] = self._find_target(inputs['document'], ex['labels'])
-            if inputs['target'] is None:
-                return
+            if not isinstance(ex['labels'] , str):  # SQuAD, not MS marco
+                inputs['target'] = self._find_target(inputs['document'], ex['labels'])
+                if inputs['target'] is None:
+                    return
 
         # Vectorize.
         #inputs = vectorize(self.opt, inputs, self.word_dict, self.feature_dict)
-        inputs = vectorize(self.opt, inputs, self.word_dict, self.char_dict, self.feature_dict)
+        #pdb.set_trace()
+        inputs = vectorize(self.opt, inputs, self.word_dict, self.char_dict, self.feature_dict, self.gen_dict)
 
         # Return inputs with original text + spans (keep for prediction)
         #pdb.set_trace()
@@ -337,3 +358,5 @@ class DocReaderAgent(Agent):
                     '[train] updates = %d | train loss = %.2f | exs = %d' %
                     (self.model.updates, self.model.train_loss.avg, self.n_examples)
                 )
+
+
