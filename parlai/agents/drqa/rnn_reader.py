@@ -8,11 +8,19 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 import torch
+import sys
+from os import path
+
 import torch.nn as nn
 from . import layers
 from .tdnn import TDNN
 from .highway import Highway
 import torch.nn.functional as F
+
+
+sys.path.append(path.abspath('../../../ptrnet/src'))
+from pointer import PointerNetwork
+from pointer import LinearTanhSeqAttn
 
 import pdb
 
@@ -120,7 +128,7 @@ class RnnDocReader(nn.Module):
         if opt['question_merge'] not in ['avg', 'self_attn']:
             raise NotImplementedError('merge_mode = %s' % opt['merge_mode'])
         if opt['question_merge'] == 'self_attn':
-            self.self_attn = layers.LinearSeqAttn(question_hidden_size)
+            self.self_attn = LinearTanhSeqAttn(question_hidden_size, question_hidden_size)
 
         # Bilinear attention for span start/end
         if opt['task_QA']:
@@ -154,6 +162,11 @@ class RnnDocReader(nn.Module):
     #def forward(self, x1, x1_f, x1_mask, x2, x2_mask, x1_c=None, x2_c=None):  # for this version, we do not utilize mask for char
     def forward(self, x1, x1_f, x1_mask, x2, x2_mask, x1_c=None, x2_c=None, x1_sent_mask=None, word_boundary=None):  # for this version, we do not utilize mask for char
 
+""" PTRNET
+#        self.ptrnet = PointerNetwork(doc_hidden_size, doc_hidden_size, 1, decoder_length=2)
+"""
+
+    def forward(self, x1, x1_f, x1_mask, x2, x2_mask, decoder_inputs=None):
         """Inputs:
         x1 = document word indices             [batch * len_d]
         x1_f = document word features indices  [batch * len_d * nfeat]
@@ -258,3 +271,24 @@ class RnnDocReader(nn.Module):
             return_list = return_list + [sent_scores]
 
         return return_list
+""" PTRNET
+        # Create decoder_inputs based on doc_hiddens
+        if decoder_inputs is not None:
+            decoder_inputs = [doc_hiddens[:, i, :] for i in decoder_inputs]
+
+        # Predict start and end positions
+        scores = self.ptrnet(doc_hiddens.transpose(0, 1), decoder_inputs, question_hidden, x1_mask)
+
+        if self.training:
+            # In training we output log-softmax for NLL
+            start_scores = F.log_softmax(scores[0])
+            end_scores = F.log_softmax(scores[1])
+        else:
+            # ...Otherwise 0-1 probabilities
+            start_scores = F.softmax(scores[0])
+            end_scores = F.softmax(scores[1])
+
+        # start_scores = self.start_attn(doc_hiddens, question_hidden, x1_mask)
+        # end_scores = self.end_attn(doc_hiddens, question_hidden, x1_mask)
+        return start_scores, end_scores
+"""

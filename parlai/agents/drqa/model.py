@@ -13,7 +13,6 @@ from torch.autograd import Variable
 from .utils import load_embeddings, AverageMeter
 #from .rnn_reader import RnnDocReader
 
-
 import pdb
 
 logger = logging.getLogger('DrQA')
@@ -147,7 +146,17 @@ class DocReaderModel(object):
         if self.opt['ans_sent_predict']:
             inputs = inputs + [ex[self.input_idx_bdy]]
             target_sent = Variable(torch.from_numpy(np.asarray(ex[self.input_idx_bdy+1])).cuda(async=True))
-
+"""
+            inputs = [Variable(e.cuda(async=True)) for e in ex[:5]]
+            inputs += [[e[0] for e in ex[5:7]]]  # Add targets to inputs for training pointer network
+            target_s = Variable(ex[5].cuda(async=True))
+            target_e = Variable(ex[6].cuda(async=True))
+        else:
+            inputs = [Variable(e) for e in ex[:5]]
+            inputs += [[e[0] for e in ex[5:7]]]  # Add targets to inputs for training pointer network
+            target_s = Variable(ex[5])
+            target_e = Variable(ex[6])
+"""
         # Run forward
         #pdb.set_trace()
         score_list = self.network(*inputs)
