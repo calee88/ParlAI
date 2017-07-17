@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch
 
 import copy
+import os
 import random
 
 
@@ -20,25 +21,34 @@ class Seq2seqAgent(Agent):
 
     @staticmethod
     def add_cmdline_args(argparser):
-        argparser.add_arg('-hs', '--hiddensize', type=int, default=64,
+        DictionaryAgent.add_cmdline_args(argparser)
+        agent = argparser.add_argument_group('Seq2Seq Arguments')
+        agent.add_argument('-hs', '--hiddensize', type=int, default=64,
             help='size of the hidden layers and embeddings')
-        argparser.add_arg('-nl', '--numlayers', type=int, default=2,
+        agent.add_argument('-nl', '--numlayers', type=int, default=2,
             help='number of hidden layers')
-        argparser.add_arg('-lr', '--learningrate', type=float, default=0.5,
+        agent.add_argument('-lr', '--learningrate', type=float, default=0.5,
             help='learning rate')
-        argparser.add_arg('-dr', '--dropout', type=float, default=0.1,
+        agent.add_argument('-dr', '--dropout', type=float, default=0.1,
             help='dropout rate')
-        argparser.add_arg('--no-cuda', action='store_true', default=False,
+        agent.add_argument('--no-cuda', action='store_true', default=False,
             help='disable GPUs even if available')
-        argparser.add_arg('--gpu', type=int, default=-1,
+        agent.add_argument('--gpu', type=int, default=-1,
             help='which GPU device to use')
 
     def __init__(self, opt, shared=None):
         super().__init__(opt, shared)
-        if shared and 'dictionary' in shared:
-            # only set up everything for the main instance
-            self.dict = shared['dictionary']
+       opt['cuda'] = not opt['no_cuda'] and torch.cuda.is_available()
+        if opt['cuda']:
+            print('[ Using CUDA ]')
+            torch.cuda.set_device(opt['gpu'])
+        if not shared:
+            # don't enter this loop for shared (ie batch) instantiations
+            self.dict = DictionaryAgent(opt)
+            self.id = 'Seq2Seq'
+            hsz = opt['hiddensize']
             self.EOS = self.dict.eos_token
+            self.observation = {'text': self.EOS, 'episode_done': True}
             self.EOS_TENSOR = torch.LongTensor(self.dict.parse(self.EOS))
 
             self.id = 'Seq2Seq'
@@ -47,10 +57,7 @@ class Seq2seqAgent(Agent):
             self.num_layers = opt['numlayers']
             self.learning_rate = opt['learningrate']
             self.use_cuda = opt.get('cuda', False)
-            self.longest_label = 2  # TODO: 1
-            if 'babi' in opt['task']:
-                self.babi_mode = True
-                self.dirs = set(['n', 's', 'e', 'w'])
+            self.longest_label = 1
 
             self.criterion = nn.NLLLoss()
             self.lt = nn.Embedding(len(self.dict), hsz, padding_idx=0,
@@ -71,6 +78,9 @@ class Seq2seqAgent(Agent):
 
             if self.use_cuda:
                 self.cuda()
+           if opt.get('model_file') and os.path.isfile(opt['model_file']):
+                print('Loading existing model parameters from ' + opt['model_file'])
+                self.load(opt['model_file'])
 
         self.episode_done = True
 
@@ -171,7 +181,7 @@ class Seq2seqAgent(Agent):
 
         if random.random() < 0.1:
             true = self.v2t(ys.data[0])
-            print('loss:', round(loss.data[0], 2), ' '.join(output_lines[0]), '(true: {})'.format(true))
+           # print('loss:', round(loss.data[0], 2), ' '.join(output_lines[0]), '(true: {})'.format(true))
         return output_lines
 
     def predict(self, xs):
@@ -208,11 +218,6 @@ class Seq2seqAgent(Agent):
                         total_done += 1
                     else:
                         output_lines[i].append(token)
-                        if self.babi_mode and token not in self.dirs:
-                            # for babi, only output one token except when
-                            # giving directions
-                            done[i] = True
-                            total_done += 1
         if random.random() < 0.1:
             print('prediction:', ' '.join(output_lines[0]))
         return output_lines
@@ -271,16 +276,19 @@ class Seq2seqAgent(Agent):
     def act(self):
         return self.batch_act([self.observation])[0]
 
-    def save(self, path):
-        model = {}
-        model['lt'] = self.lt.state_dict()
-        model['encoder'] = self.encoder.state_dict()
-        model['decoder'] = self.decoder.state_dict()
-        model['d2o'] = self.d2o.state_dict()
-        model['longest_label'] = self.longest_label
+    def save(self, path=None):
+        path = self.opt.get('model_file', None) if path is None else path
 
-        with open(path, 'wb') as write:
-            torch.save(model, write)
+        if path:
+            model = {}
+            model['lt'] = self.lt.state_dict()
+            model['encoder'] = self.encoder.state_dict()
+            model['decoder'] = self.decoder.state_dict()
+            model['d2o'] = self.d2o.state_dict()
+            model['longest_label'] = self.longest_label
+
+            with open(path, 'wb') as write:
+                torch.save(model, write)
 
     def load(self, path):
         with open(path, 'rb') as read:

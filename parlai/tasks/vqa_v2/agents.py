@@ -5,6 +5,7 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 from parlai.core.agents import Teacher
+from parlai.core.image_featurizers import ImageLoader
 from .build import build, buildImage
 
 from PIL import Image
@@ -29,7 +30,7 @@ def _path(opt):
     elif dt == 'test':
         ques_suffix = 'v2_OpenEnded_mscoco_test2015'
         annotation_suffix = 'None'
-        img_suffix = os.path.join('test2014', 'COCO_test2014_')
+        img_suffix = os.path.join('test2015', 'COCO_test2015_')
     else:
         raise RuntimeError('Not valid datatype.')
 
@@ -70,6 +71,7 @@ class OeTeacher(Teacher):
                 self.annotation = shared['annotation']
         else:
             self._setup_data(data_path, annotation_path)
+        self.len = len(self.ques['questions'])
 
 
         # for ordered data in batch mode (especially, for validation and
@@ -77,6 +79,7 @@ class OeTeacher(Teacher):
         # size so they all process disparate sets of the data
         self.step_size = opt.get('batchsize', 1)
         self.data_offset = opt.get('batchindex', 0)
+        self.image_loader = ImageLoader(opt)
 
         self.reset()
 
@@ -101,7 +104,9 @@ class OeTeacher(Teacher):
         if self.datatype == 'train':
             self.episode_idx = random.randrange(self.len)
         else:
-            self.episode_idx = (self.episode_idx + 1) % self.len
+            self.episode_idx = (self.episode_idx + self.step_size) % len(self)
+            if self.episode_idx == len(self) - self.step_size:
+                self.epochDone = True
 
         qa = self.ques['questions'][self.episode_idx]
         question = qa['question']
@@ -110,7 +115,7 @@ class OeTeacher(Teacher):
         img_path = self.image_path + '%012d.jpg' % (image_id)
 
         action = {
-            'image': _image_loader(self.opt, img_path),
+            'image': self.image_loader.load(img_path),
             'text': question,
             'episode_done': True
         }
@@ -140,8 +145,6 @@ class OeTeacher(Teacher):
             print('loading: ' + annotation_path)
             with open(annotation_path) as data_file:
                 self.annotation = json.load(data_file)
-
-        self.len = len(self.ques['questions'])
 
 
 class DefaultTeacher(OeTeacher):

@@ -1,6 +1,3 @@
-# exp files
-exp-*/
-
 # MISC
 *.tmp
 
@@ -108,3 +105,6 @@ ENV/
 
 # Experiments
 exp*
+
+# MTurk
+tmp/

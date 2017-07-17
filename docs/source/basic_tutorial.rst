@@ -16,7 +16,6 @@ Its goal is to provide researchers:
 - multi-task training over many datasets at once
 - seamless integration of Amazon Mechanical Turk for data collection and human evaluation
 
-
 Getting Started
 ---------------
 
@@ -129,7 +128,7 @@ Simple Display Loop
 
 Now that we understand the basic, let's set up a simple loop which displays
 whichever task we specify. A complete version of this for utility is included
-in the ``examples`` directory, but we'll do this one from scratch.
+in the ``examples`` directory (in ``display_data.py``), but we'll do this one from scratch.
 
 First, a few imports:
 

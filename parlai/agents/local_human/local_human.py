@@ -23,5 +23,12 @@ class LocalHumanAgent(Agent):
         obs = self.observation
         reply = {}
         reply['id'] = self.getID()
-        reply['text'] = input("Enter Your Reply: ")
+        reply_text = input("Enter Your Message: ")
+        reply_text = reply_text.replace('\\n', '\n')
+        reply['episode_done'] = False
+        if '[DONE]' in reply_text:
+            reply['episode_done'] = True
+            self.episodeDone = True
+            reply_text = reply_text.replace('[DONE]', '')
+        reply['text'] = reply_text
         return reply

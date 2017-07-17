@@ -3,7 +3,25 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
-import torch
+"""(A partial) implementation of the DrQa Document Reader from:
+
+Danqi Chen, Adam Fisch, Jason Weston, Antoine Bordes. 2017.
+Reading Wikipedia to Answer Open-Domain Questions.
+In Association for Computational Linguistics (ACL).
+
+Link: https://arxiv.org/abs/1704.00051
+
+Note:
+To use pretrained word embeddings, set the --embeddings_file path argument.
+GloVe is recommended, see http://nlp.stanford.edu/data/glove.840B.300d.zip.
+"""
+
+try:
+    import torch
+except ModuleNotFoundError:
+    raise ModuleNotFoundError('Need to install pytorch: go to pytorch.org')
+
+import os
 import numpy as np
 import logging
 import copy
@@ -20,8 +38,6 @@ from . import config
 from .utils import build_feature_dict, vectorize, batchify, normalize_text
 from .model import DocReaderModel
 
-logger = logging.getLogger('DrQA')
-
 # ------------------------------------------------------------------------------
 # Dictionary.
 # ------------------------------------------------------------------------------
@@ -33,25 +49,25 @@ class SimpleDictionaryAgent(DictionaryAgent):
 
     @staticmethod
     def add_cmdline_args(argparser):
-        DictionaryAgent.add_cmdline_args(argparser)
-        argparser.add_arg(
+        group = DictionaryAgent.add_cmdline_args(argparser)
+        group.add_argument(
             '--pretrained_words', type='bool', default=True,
             help='Use only words found in provided embedding_file'
         )
 
     def __init__(self, *args, **kwargs):
-        super(SimpleDictionaryAgent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Index words in embedding file
-        if self.opt['pretrained_words'] and 'embedding_file' in self.opt:
-            logger.info('[ Indexing words with embeddings... ]')
+        if self.opt['pretrained_words'] and self.opt.get('embedding_file'):
+            print('[ Indexing words with embeddings... ]')
             self.embedding_words = set()
             with open(self.opt['embedding_file']) as f:
                 for line in f:
                     w = normalize_text(line.rstrip().split(' ')[0])
                     self.embedding_words.add(w)
-            logger.info('[ Num words in set = %d ]' %
-                        len(self.embedding_words))
+            print('[ Num words in set = %d ]' %
+                  len(self.embedding_words))
         else:
             self.embedding_words = None
 
@@ -83,13 +99,24 @@ class SimpleDictionaryAgent(DictionaryAgent):
 # ------------------------------------------------------------------------------
 
 
-class DocReaderAgent(Agent):
+class DrqaAgent(Agent):
 
     @staticmethod
     def add_cmdline_args(argparser):
         config.add_cmdline_args(argparser)
+        DrqaAgent.dictionary_class().add_cmdline_args(argparser)
 
-    def __init__(self, opt, shared=None, word_dict=None):
+    @staticmethod
+    def dictionary_class():
+        return SimpleDictionaryAgent
+
+    def __init__(self, opt, shared=None):
+        if opt['numthreads'] >1:
+            raise RuntimeError("numthreads > 1 not supported for this model.")
+
+        # Load dict.
+        if not shared:
+            word_dict = DrqaAgent.dictionary_class()(opt)
         # All agents keep track of the episode (for multiple questions)
         self.episode_done = True
 
@@ -104,11 +131,18 @@ class DocReaderAgent(Agent):
         self.word_dict = word_dict
         self.opt = copy.deepcopy(opt)
         config.set_defaults(self.opt)
-        if 'pretrained_model' in self.opt:
-            self._init_from_saved()
+
+        if self.opt.get('model_file') and os.path.isfile(opt['model_file']):
+            self._init_from_saved(opt['model_file'])
         else:
-            self._init_from_scratch()
+            if self.opt.get('pretrained_model'):
+                self._init_from_saved(opt['pretrained_model'])
+            else:
+                self._init_from_scratch()
+        self.opt['cuda'] = not self.opt['no_cuda'] and torch.cuda.is_available()
         if self.opt['cuda']:
+            print('[ Using CUDA (GPU %d) ]' % opt['gpu'])
+            torch.cuda.set_device(opt['gpu'])
             self.model.cuda()
         self.n_examples = 0
 
@@ -117,14 +151,13 @@ class DocReaderAgent(Agent):
         self.opt['num_features'] = len(self.feature_dict)
         self.opt['vocab_size'] = len(self.word_dict)
 
-        logger.info('[ Initializing model from scratch ]')
+        print('[ Initializing model from scratch ]')
         self.model = DocReaderModel(self.opt, self.word_dict, self.feature_dict)
         self.model.set_embeddings()
 
-    def _init_from_saved(self):
-        logger.info('[ Loading model %s ]' % self.opt['pretrained_model'])
-        saved_params = torch.load(
-            self.opt['pretrained_model'],
+    def _init_from_saved(self, fname):
+        print('[ Loading model %s ]' % fname)
+        saved_params = torch.load(fname,
             map_location=lambda storage, loc: storage
         )
 
@@ -157,14 +190,13 @@ class DocReaderAgent(Agent):
         if ex is None:
             return reply
         batch = batchify(
-            [ex], null=self.word_dict['<NULL>'], cuda=self.opt['cuda']
+            [ex], null=self.word_dict[self.word_dict.null_token], cuda=self.opt['cuda']
         )
 
         # Either train or predict
         if 'labels' in self.observation:
             self.n_examples += 1
             self.model.update(batch)
-            self._log()
         else:
             reply['text'] = self.model.predict(batch)[0]
 
@@ -191,14 +223,13 @@ class DocReaderAgent(Agent):
 
         # Else, use what we have (hopefully everything).
         batch = batchify(
-            examples, null=self.word_dict['<NULL>'], cuda=self.opt['cuda']
+            examples, null=self.word_dict[self.word_dict.null_token], cuda=self.opt['cuda']
         )
 
         # Either train or predict
         if 'labels' in observations[0]:
             self.n_examples += len(examples)
             self.model.update(batch)
-            self._log()
         else:
             predictions = self.model.predict(batch)
             for i in range(len(predictions)):
@@ -206,9 +237,12 @@ class DocReaderAgent(Agent):
 
         return batch_reply
 
-    def save(self, filename):
+    def save(self, fname=None):
         """Save the parameters of the agent to a file."""
-        self.model.save(self.opt['model_file'])
+        fname = self.opt.get('model_file', None) if fname is None else fname
+        if fname:
+            print("[ saving model: " + fname + " ]")
+            self.model.save(fname)
 
     # --------------------------------------------------------------------------
     # Helper functions.
@@ -265,9 +299,8 @@ class DocReaderAgent(Agent):
             return
         return targets[np.random.choice(len(targets))]
 
-    def _log(self):
-        if self.model.updates % self.opt['display_iter'] == 0:
-            logger.info(
-                '[train] updates = %d | train loss = %.2f | exs = %d' %
-                (self.model.updates, self.model.train_loss.avg, self.n_examples)
+    def report(self):
+        return (
+            '[train] updates = %d | train loss = %.2f | exs = %d' %
+            (self.model.updates, self.model.train_loss.avg, self.n_examples)
             )

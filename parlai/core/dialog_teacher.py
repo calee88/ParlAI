@@ -5,9 +5,8 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 from .agents import Teacher
-from .thread_utils import SharedTable
-from .metrics import Metrics
 
+from .image_featurizers import ImageLoader
 from PIL import Image
 import random
 import os
@@ -52,10 +51,11 @@ class DialogTeacher(Teacher):
         # first initialize any shared objects
         self.random = self.datatype == 'train'
         if shared and shared.get('data'):
-            self.data = shared['data']
+            self.data = DialogData(opt, None, cands=self.label_candidates(),
+                                    shared=shared['data'].share())
         else:
             self.data = DialogData(opt, self.setup_data(opt['datafile']),
-                                   cands=self.label_candidates())
+                                    cands=self.label_candidates())
 
         #pdb.set_trace()
         # for ordered data in batch mode (especially, for validation and
@@ -63,7 +63,6 @@ class DialogTeacher(Teacher):
         # size so they all process disparate sets of the data
         self.step_size = opt.get('batchsize', 1)
         self.data_offset = opt.get('batchindex', 0)
-
         self.reset()
 
     def reset(self):
@@ -220,15 +219,27 @@ class DialogData(object):
     or randomly when returning examples to the caller.
     """
 
-    def __init__(self, opt, data_loader, cands=None):
+    def __init__(self, opt, data_loader, cands=None, shared=None):
         # self.data is a list of episodes
         # each episode is a tuple of entries
         # each entry is a tuple of values for the action/observation table
         self.opt = opt
-        self.data = []
-        self._load(data_loader)
-        self.cands = None if cands == None else set(sys.intern(c) for c in cands)
+        if shared:
+            self.data = shared.get('data', [])
+            self.cands = shared.get('cands', None)
+            self.image_loader = shared.get('image_loader', None)
+        else:
+            self.image_loader = ImageLoader(opt)
+            self.data = []
+            self._load(data_loader)
+            self.cands = None if cands == None else set(sys.intern(c) for c in cands)
         self.addedCands = []
+        self.copied_cands = False
+
+    def share(self):
+        shared = {'data': self.data, 'cands': self.cands,
+                'image_loader': self.image_loader}
+        return shared
 
     def __len__(self):
         """Returns total number of entries available. Each episode has at least
@@ -322,10 +333,12 @@ class DialogData(object):
             if len(entry) > 2:
                 table['reward'] = entry[2]
                 if len(entry) > 3:
-                    table['label_candidates'] = entry[3]
-                    if len(entry) > 4 and not self.opt.get('no_images', False):
-                        table['image'] = load_image(self.opt, entry[4])
-
+                   if entry[3] is not None:
+                        table['label_candidates'] = entry[3]
+                    if len(entry) > 4 and entry[4] is not None:
+                        img = self.image_loader.load(entry[4])
+                        if img is not None:
+                            table['image'] = img
 
         if (table.get('labels', None) is not None
             and self.cands is not None):
@@ -336,6 +349,9 @@ class DialogData(object):
             for label in table['labels']:
                 if label not in self.cands:
                     # add labels, queue them for removal next time
+                    if not self.copied_cands:
+                        self.cands = self.cands.copy()
+                        self.copied_cands = True
                     self.cands.add(label)
                     self.addedCands.append(label)
             table['label_candidates'] = self.cands
@@ -350,18 +366,3 @@ class DialogData(object):
         table['episode_done'] = episode_done
         return table, end_of_data
 
-def load_image(opt, path):
-    if opt.get('no_images', False) or not path:
-        return None
-    mode = opt.get('image_preprocessor', 'raw')
-    if mode != 'raw':
-        prepath, imagefn = os.path.split(path)
-        new_path = os.path.join(prepath, mode, imagefn)
-        if not os.path.isfile(new_path):
-            raise NotImplementedError('image preprocessing mode' +
-                                      '{} not supported yet'.format(mode))
-        else:
-            return Image.open(path)
-    else:
-        # return the image
-        return Image.open(path).convert('RGB')
