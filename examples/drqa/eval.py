@@ -37,7 +37,6 @@ def main(opt):
         logger.info('TDNN embedding dim = %d' % (opt['embedding_dim_TDNN']))
 
     #Write prediction file
-    #f_predict = open(("exp-squad/" + str(opt['expnum']) + '.prediction'),"w")
     f_predict = open((str(opt['model_file']) + '.prediction'),"w")
     f_predict.write("{")
     f_analysis = open((str(opt['model_file']) + '.analysis'),"w")
@@ -63,6 +62,7 @@ def main(opt):
     f1_avg_prev = 0
     acc_avg_prev = 0
     for _ in valid_world:
+        pdb.set_trace()
         valid_world.parley()
         nExample+=1
         #pdb.set_trace()
