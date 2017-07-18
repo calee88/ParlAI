@@ -135,8 +135,7 @@ class DocReaderModel(object):
         else:
             #inputs = [Variable(e) for e in ex[:5]]
             #target_s = Variable(ex[5])
-            #target_e = Variable(ex[6])
-
+            #target_e = Variable(ex[6]
             inputs = [Variable(e) for e in ex[:self.input_idx_bdy]]
             target_s = Variable(ex[self.target_idx_start])
             target_e = Variable(ex[self.target_idx_start+1])
@@ -146,7 +145,7 @@ class DocReaderModel(object):
         if self.opt['ans_sent_predict']:
             inputs = inputs + [ex[self.input_idx_bdy]]
             target_sent = Variable(torch.from_numpy(np.asarray(ex[self.input_idx_bdy+1])).cuda(async=True))
-"""
+        """
             inputs = [Variable(e.cuda(async=True)) for e in ex[:5]]
             inputs += [[e[0] for e in ex[5:7]]]  # Add targets to inputs for training pointer network
             target_s = Variable(ex[5].cuda(async=True))
@@ -156,7 +155,8 @@ class DocReaderModel(object):
             inputs += [[e[0] for e in ex[5:7]]]  # Add targets to inputs for training pointer network
             target_s = Variable(ex[5])
             target_e = Variable(ex[6])
-"""
+        """
+
         # Run forward
         #pdb.set_trace()
         score_list = self.network(*inputs)
