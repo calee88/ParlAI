@@ -144,6 +144,7 @@ class DocReaderAgent(Agent):
         self.char_dict = char_dict
         self.opt = copy.deepcopy(opt)
         config.set_defaults(self.opt)
+        pdb.set_trace()
         if 'pretrained_model' in self.opt:
             self._init_from_saved()
         else:

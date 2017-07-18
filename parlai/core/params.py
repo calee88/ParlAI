@@ -66,7 +66,7 @@ class ParlaiParser(argparse.ArgumentParser):
                             os.path.realpath(__file__)))))
         os.environ['PARLAI_HOME'] = self.parlai_home
 
-       self.add_arg = self.add_argument
+        self.add_arg = self.add_argument
 
         if add_parlai_args:
             self.add_parlai_args()
@@ -128,7 +128,7 @@ class ParlaiParser(argparse.ArgumentParser):
             help='choose from: train, train:ordered, valid, test. ' +
                  'by default: train is random with replacement, ' +
                  'valid is ordered, test is ordered.')
-       parlai.add_argument(
+        parlai.add_argument(
             '-im', '--image-mode', default='raw', type=str,
             help='image preprocessor to use. default is "raw". set to "none" '
                  'to skip image loading.')
@@ -159,7 +159,7 @@ class ParlaiParser(argparse.ArgumentParser):
         model_args.add_argument(
             '-m', '--model', default=None,
             help='the model class name, should match parlai/agents/<model>')
-       model_args.add_argument(
+        model_args.add_argument(
             '-mf', '--model-file', default=None,
             help='model file name for loading and saving models')
         model_args.add_argument(

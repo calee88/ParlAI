@@ -473,8 +473,8 @@ class MultiWorld(World):
             m['accuracy'] = sum_accuracy / num_tasks
             m['total'] = total
         return m
-
-   def reset(self):
+ 
+    def reset(self):
         for w in self.worlds:
             w.reset()
 

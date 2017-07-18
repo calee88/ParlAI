@@ -19,6 +19,8 @@ def add_cmdline_args(parser):
     agent.add_argument('--random_seed', type=int, default=1013)
 
     # Basics
+    agent.add_argument('--model_file', type=str, default=None,
+                        help='Path where best valid models are saved')
     agent.add_argument('--embedding_file', type=str, default=None,
                         help='File of space separated embeddings: w e1 ... ed')
     agent.add_argument('--pretrained_model', type=str, default=None,
@@ -43,10 +45,9 @@ def add_cmdline_args(parser):
     # Model details
     agent.add_argument('--net', type=str, default='rnet')
     agent.add_argument('--fix_embeddings', type='bool', default=True)
-    agent.add_argument('--tune_partial', type=int, default=0,
+    agent.add_argument('--tune_partial', type=int, default=0)
     agent.add_argument('--log_file', type=str, default=None)
-
-   agent.add_argument('--embedding_dim', type=int, default=300,
+    agent.add_argument('--embedding_dim', type=int, default=300,
                         help=('Default embedding size if '
                               'embedding_file is not given'))
     agent.add_argument('--embedding_dim_char', type=int, default=10,
@@ -93,10 +94,8 @@ def add_cmdline_args(parser):
     agent.add_argument('--max_len', type=int, default=15,
                         help='The max span allowed during decoding')
     agent.add_argument('--rnn_padding_sent', type='bool', default=True)
-    agent.add_argument('--display_iter', type=int, default=10,
+    agent.add_argument('--display_iter', type=int, default=10)
     agent.add_argument('--rnn_padding', type='bool', default=False)
-                        help='Print train error after every \
-                              <display_iter> epoches (default 10)')
     agent.add_argument('--dropout_emb', type=float, default=0.4,
                         help='Dropout rate for word embeddings')
     agent.add_argument('--dropout_rnn', type=float, default=0.4,

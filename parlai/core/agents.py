@@ -151,7 +151,7 @@ class Teacher(Agent):
         shared['metrics'] = self.metrics
         return shared
 
-lass MultiTaskTeacher(Teacher):
+class MultiTaskTeacher(Teacher):
     """Creates a teacher that is actually a set of teachers each based on
     a task string--each of these teachers will get called in turn,
     either randomly or in order.

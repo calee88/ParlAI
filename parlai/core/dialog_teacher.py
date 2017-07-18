@@ -335,7 +335,7 @@ class DialogData(object):
                 if len(entry) > 3:
                    if entry[3] is not None:
                         table['label_candidates'] = entry[3]
-                    if len(entry) > 4 and entry[4] is not None:
+                   if len(entry) > 4 and entry[4] is not None:
                         img = self.image_loader.load(entry[4])
                         if img is not None:
                             table['image'] = img

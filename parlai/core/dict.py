@@ -71,8 +71,9 @@ class DictionaryAgent(Agent):
     default_lang = 'english'
     default_maxngram = -1
     default_minfreq = 0
-    default_null = '<NULL>'
-    default_unk = '<UNK>'
+    default_null = '__NULL__'
+    default_eos = '__EOS__'
+    default_unk = '__UNK__'
 
     @staticmethod
     def add_cmdline_args(argparser):
@@ -94,9 +95,9 @@ class DictionaryAgent(Agent):
             help='looks for ngrams of up to this size. this is ignored when ' +
                  'building the dictionary. note: this takes approximate ' +
                  'runtime of len(sentence)^max_ngram_size')
-       dictionary.add_argument(
-            '--dict-minfreq', default=DictionaryAgent.default_minfreq, type=int,
-            help='minimum frequency of words to include them in the dictionary')
+        dictionary.add_argument(
+               '--dict-minfreq', default=DictionaryAgent.default_minfreq, type=int,
+               help='minimum frequency of words to include them in the dictionary')
         dictionary.add_argument(
            '--dict-nulltoken', default=DictionaryAgent.default_null,
            help='empty token, can be used for padding or just empty values')
@@ -138,7 +139,7 @@ class DictionaryAgent(Agent):
                 self.tok2ind[self.unk_token] = index
                 self.ind2tok[index] = self.unk_token
 
-           if opt.get('dict_file') and os.path.isfile(opt['dict_file']):
+            if opt.get('dict_file') and os.path.isfile(opt['dict_file']):
                 # load pre-existing dictionary
                 self.load(opt['dict_file'])
             elif opt.get('dict_initpath'):
@@ -165,7 +166,7 @@ class DictionaryAgent(Agent):
                 # fix count for unknown token to one billion
                 self.freq[self.unk_token] = 1000000000
 
-           if opt.get('dict_file'):
+            if opt.get('dict_file'):
                 self.save_path = opt['dict_file']
 
     def __contains__(self, key):
@@ -263,7 +264,7 @@ class DictionaryAgent(Agent):
                 token = unescape(split[0])
                 cnt = int(split[1]) if len(split) > 1 else 0
                 self.freq[token] = cnt
-               if token not in self.tok2ind:
+                if token not in self.tok2ind:
                     index = len(self.tok2ind)
                     self.tok2ind[token] = index
                     self.ind2tok[index] = token
